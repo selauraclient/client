@@ -1,8 +1,10 @@
 #include "main.hpp"
 
+using namespace logger;
+
 void init(std::span<std::byte> bytes) {
 	logger::init();
-	logger::info("loaded selaura");
+	info("loaded selaura");
 }
 
 #ifdef _WIN32
