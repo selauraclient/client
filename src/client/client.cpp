@@ -33,7 +33,8 @@ namespace selaura {
                 &Dimension::getTimeOfDay_hk,
                 &bgfx::d3d11::RendererContextD3D11::submit_hk,
                 &bgfx::d3d12::RendererContextD3D12::submit_hk,
-                &ClientInstanceScreenModel::executeCommand_hk
+                &ClientInstanceScreenModel::executeCommand_hk,
+                &GuiData::displayClientMessage_hk
             >();
 
             magic_enum::enum_for_each<MinecraftPacketIds>([](auto val) {
