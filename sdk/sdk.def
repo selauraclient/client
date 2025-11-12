@@ -1,0 +1,4 @@
+LIBRARY sdk.dll
+EXPORTS
+    add @1 NONAME
+    sub @2 NONAME
