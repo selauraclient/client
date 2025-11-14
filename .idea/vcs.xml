@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/entt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/fmt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/libhat-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/out/build/x64-Debug/_deps/entt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/out/build/x64-Debug/_deps/fmt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/out/build/x64-Debug/_deps/libhat-src" vcs="Git" />
+  </component>
+</project>

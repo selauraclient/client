@@ -19,6 +19,7 @@ include(cmake/CPM.cmake)
 CPMAddPackage("gh:BasedInc/libhat@0.9.0")
 CPMAddPackage("gh:fmtlib/fmt#11.1.4")
 CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
+CPMAddPackage("gh:cursey/SafetyHook#main")
 
 target_include_directories(Selaura PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -39,6 +40,7 @@ target_link_libraries(Selaura PUBLIC
     libhat::libhat
     fmt::fmt
     EnTT
+    safetyhook::safetyhook
     ${CMAKE_CURRENT_BINARY_DIR}/sdk.lib
     Version.lib
     dwmapi.lib

@@ -19,11 +19,8 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     platform->InitConsole();
 
     Selaura::InitializeSDK();
-
-    fmt::println("addition: {}", add(1, 2));
-
-    using test = Selaura::Pattern<"80 B9 ? ? ? ? ? 74 ? C6 81 ? ? ? ? ? 48 8D 4C 24 ? E8 ? ? ? ? 90", Selaura::SignatureOffset<Selaura::Ref, 2>>;
-    fmt::println("test: {}", test::resolve());
+    auto pkt = MinecraftPackets::createPacket(MinecraftPacketIds::Text);
+    fmt::println("test: {}", pkt->getName());
 
     return 0;
 }

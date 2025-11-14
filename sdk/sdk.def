@@ -1,4 +1,3 @@
 LIBRARY sdk.dll
 EXPORTS
-    add @1 NONAME
-    sub @2 NONAME
+    ?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z @1 NONAME

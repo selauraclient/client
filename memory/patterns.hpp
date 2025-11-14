@@ -25,9 +25,9 @@ namespace Selaura {
 
             if constexpr (!std::is_void_v<Offset>) {
                 if constexpr (std::is_same_v<typename Offset::mode, Deref>) {
-                    constexpr auto offset = *reinterpret_cast<int*>(addr + Offset::offset);
+                    auto offset = *reinterpret_cast<int*>(addr + Offset::offset);
                     auto final = addr + offset + (static_cast<unsigned long long>(Offset::offset) + sizeof(int));
-                    return reinterpret_cast<uintptr_t>(final);
+                    return final;
                 } else {
                     uintptr_t final = *reinterpret_cast<int *>(addr + Offset::offset);
                     return final;

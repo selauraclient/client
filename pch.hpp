@@ -4,7 +4,7 @@
 
 #pragma once
 #define CLIENT_VERSION "0.10"
-#define MCAPI extern "C" __declspec(dllimport)
+#define MCAPI __declspec(dllimport)
 
 #define NOMINMAX
 #include <dwmapi.h>
@@ -22,6 +22,8 @@
 #include <sdk/sdk.hpp>
 #include <platform/win32.hpp>
 
+#include <safetyhook.hpp>
+
 #include <entt/entt.hpp>
 #include <entt/core/type_info.hpp>
 
@@ -37,3 +39,8 @@
 #include <libhat/scanner.hpp>
 
 #include <memory/patterns.hpp>
+
+#include <sdk/mc/network/IPacketHandlerDispatcher.hpp>
+#include <sdk/mc/network/Packet.hpp>
+#include <sdk/mc/network/MinecraftPackets.hpp>
+#include <sdk/mc/network/PacketHandlerDispatcher.hpp>
