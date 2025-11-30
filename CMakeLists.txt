@@ -44,6 +44,9 @@ target_link_libraries(Selaura PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}/sdk.lib
     Version.lib
     dwmapi.lib
+    d3d11.lib
+    d3d12.lib
+    dxgi.lib
 )
 
 target_link_options(Selaura PRIVATE "/DELAYLOAD:sdk.dll")

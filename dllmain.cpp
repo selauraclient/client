@@ -1,7 +1,3 @@
-//
-// Created by chyves on 11/11/2025.
-//
-
 #include "pch.hpp"
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {

@@ -1,7 +1,3 @@
-//
-// Created by chyves on 11/11/2025.
-//
-
 #pragma once
 #define CLIENT_VERSION "0.10"
 #define MCAPI __declspec(dllimport)
@@ -11,11 +7,18 @@
 #include <Psapi.h>
 #include <shlobj_core.h>
 #include <Windows.h>
+#include <winrt/base.h>
+
+#include <d3d11.h>
+#include <d3d12.h>
+#include <dxgi1_4.h>
 
 #include <exception>
 #include <filesystem>
 #include <span>
 #include <string>
+#include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include <sdk/import/basic.hpp>
