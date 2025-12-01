@@ -36,18 +36,22 @@ add_custom_command(
     VERBATIM
 )
 
+add_custom_target(GenerateSdkLib DEPENDS ${SDK_LIB})
+
 target_link_libraries(Selaura PUBLIC
     libhat::libhat
     fmt::fmt
     EnTT
     safetyhook::safetyhook
-    ${CMAKE_CURRENT_BINARY_DIR}/sdk.lib
+    ${SDK_LIB} 
     Version.lib
     dwmapi.lib
     d3d11.lib
     d3d12.lib
     dxgi.lib
 )
+
+add_dependencies(Selaura GenerateSdkLib)
 
 target_link_options(Selaura PRIVATE "/DELAYLOAD:sdk.dll")
 target_precompile_headers(Selaura PRIVATE pch.hpp)
