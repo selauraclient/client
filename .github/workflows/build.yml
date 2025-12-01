@@ -16,9 +16,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate sdk.lib manually
+        shell: cmd
         run: |
+          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" >nul
           cd sdk
-          lib /nologo /def:sdk.def /out:../build/sdk.lib /machine:x64
+          lib /nologo /def:sdk.def /out:..\build\sdk.lib /machine:x64
+
 
       - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
