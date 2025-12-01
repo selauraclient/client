@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure CMake (Windows)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -21,10 +21,11 @@ jobs:
       - name: Build (Windows)
         run: cmake --build build --config Release
 
-      - name: Upload DLL artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload DLL (Artifact v4)
+        uses: actions/upload-artifact@v4
         with:
-          name: selaura-client-dll
+          name: selaura-client
           path: |
             build/**/*.dll
             build/**/*.pdb
+          include-hidden-files: false
