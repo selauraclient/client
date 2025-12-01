@@ -15,17 +15,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure CMake (Windows)
+      - name: Generate sdk.lib manually
+        run: |
+          cd sdk
+          lib /nologo /def:sdk.def /out:../build/sdk.lib /machine:x64
+
+      - name: Configure CMake
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build (Windows)
-        run: cmake --build build --config Release
+      - name: Build DLL
+        run: cmake --build build --config Release --verbose
 
-      - name: Upload DLL (Artifact v4)
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: selaura-client
+          name: selaura-build
           path: |
             build/**/*.dll
+            build/**/*.lib
             build/**/*.pdb
-          include-hidden-files: false
