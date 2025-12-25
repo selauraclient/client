@@ -1,0 +1,14 @@
+[
+	{
+		"symbol": "?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z",
+		"signature": "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 48 8B F9 48 89 4C 24 ? 33 ED 81 FA"
+	},
+	{
+		"symbol": "?getTimeOfDay@Dimension@@QEAAMHM@Z",
+		"signature": "44 8B C2 B8 F1 19 76 05 F7 EA"
+	},
+	{
+		"symbol": "?setupAndRender@ScreenView@@QEAAXAEAVUIRenderContext@@@Z",
+		"signature": "48 8B C4 48 89 58 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D A8 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 70 ? 0F 29 78 ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 8B FA 48 89 55"
+	}
+]

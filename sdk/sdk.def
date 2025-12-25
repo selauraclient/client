@@ -1,3 +1,5 @@
 LIBRARY sdk.dll
 EXPORTS
     ?createPacket@MinecraftPackets@@SA?AV?$shared_ptr@VPacket@@@std@@W4MinecraftPacketIds@@@Z @1 NONAME
+    ?getTimeOfDay@Dimension@@QEAAMHM@Z @2 NONAME
+    ?setupAndRender@ScreenView@@QEAAXAEAVUIRenderContext@@@Z @3 NONAME

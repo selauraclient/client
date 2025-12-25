@@ -13,17 +13,16 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
+#include <bit>
 #include <exception>
 #include <filesystem>
+#include <mutex>
+#include <shared_mutex>
 #include <span>
 #include <string>
 #include <tuple>
 #include <type_traits>
 #include <vector>
-
-#include <sdk/import/basic.hpp>
-#include <sdk/sdk.hpp>
-#include <platform/win32.hpp>
 
 #include <safetyhook.hpp>
 
@@ -40,10 +39,18 @@
 #include <libhat/access.hpp>
 #include <libhat/signature.hpp>
 #include <libhat/scanner.hpp>
+#include <libhat/memory_protector.hpp>
+#include <libhat/process.hpp>
 
+#include <memory/memory.hpp>
 #include <memory/patterns.hpp>
+#include <memory/delayloader/delayloader.hpp>
 
-#include <sdk/mc/network/IPacketHandlerDispatcher.hpp>
-#include <sdk/mc/network/Packet.hpp>
-#include <sdk/mc/network/MinecraftPackets.hpp>
-#include <sdk/mc/network/PacketHandlerDispatcher.hpp>
+#include <sdk/network/IPacketHandlerDispatcher.hpp>
+#include <sdk/network/Packet.hpp>
+#include <sdk/network/MinecraftPackets.hpp>
+#include <sdk/network/PacketHandlerDispatcher.hpp>
+
+#include <sdk/renderer/ScreenView.hpp>
+
+#include <sdk/world/Dimension.hpp>
