@@ -61,7 +61,11 @@ CPMAddPackage("gh:fmtlib/fmt#11.1.4")
 CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
 CPMAddPackage("gh:cursey/SafetyHook#main")
 CPMAddPackage("gh:ocornut/imgui#master")
-
+CPMAddPackage(
+        URI "gh:gabime/spdlog#v1.x"
+        OPTIONS
+            "SPDLOG_FMT_EXTERNAL ON"
+)
 
 add_library(Selaura SHARED
         core/dllmain.cpp
@@ -76,6 +80,7 @@ add_library(Selaura SHARED
         ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
 
         memory/hooks/D3DHooks.cpp
+        core/console.cpp
 )
 
 target_include_directories(Selaura PRIVATE
@@ -88,6 +93,7 @@ target_link_libraries(Selaura PUBLIC
         fmt::fmt
         EnTT
         safetyhook::safetyhook
+        spdlog
         ${SDK_LIB}
         Version.lib
         dwmapi.lib

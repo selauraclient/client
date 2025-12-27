@@ -15,7 +15,10 @@ HRESULT selaura::detour<&IDXGISwapChain::Present>::hk(IDXGISwapChain* thisptr, U
             device->GetImmediateContext(device_ctx.put());
 
             ImGui::CreateContext();
-            ImGui_ImplWin32_Init(GetForegroundWindow());
+
+            DXGI_SWAP_CHAIN_DESC desc{};
+            thisptr->GetDesc(&desc);
+            ImGui_ImplWin32_Init(desc.OutputWindow);
             ImGui_ImplDX11_Init(device.get(), device_ctx.get());
 
             imgui_init = true;
@@ -34,9 +37,7 @@ HRESULT selaura::detour<&IDXGISwapChain::Present>::hk(IDXGISwapChain* thisptr, U
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    auto dl = ImGui::GetForegroundDrawList();
-    dl->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 3, ImVec2(10, 10),
-            ImColor(255, 255, 255, 255),"i love selaura client!");
+    selaura::console->render();
 
     ImGui::Render();
 

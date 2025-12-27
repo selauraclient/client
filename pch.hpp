@@ -33,6 +33,10 @@
 #include <fmt/base.h>
 #include <fmt/format.h>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/base_sink-inl.h>
+#include <spdlog/sinks/stdout_color_sinks-inl.h>
+
 #include <libhat/access.hpp>
 #include <libhat/signature.hpp>
 #include <libhat/scanner.hpp>
@@ -65,3 +69,6 @@
 #include <sdk/world/Dimension.hpp>
 
 #include <memory/hooks/D3DHooks.hpp>
+
+#include <core/console.hpp>
+#include <core/console_sink.hpp>

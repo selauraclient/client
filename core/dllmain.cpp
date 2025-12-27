@@ -2,42 +2,28 @@
 #include <memory/patterns/resolver.hpp>
 
 void EjectAndExit(HMODULE hModule) {
-    fmt::println("Ejecting Selaura...");
+    spdlog::info("Ejecting Selaura...");
     selaura::detail::run_cleanup();
 
     Sleep(100);
 
-    fclose(stdout);
-    fclose(stderr);
-    fclose(stdin);
-    FreeConsole();
+    spdlog::shutdown();
+    selaura::console->shutdown();
 
     FreeLibraryAndExitThread(hModule, 0);
 }
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
-    AllocConsole();
-
-    AttachConsole(GetCurrentProcessId());
-    SetConsoleTitleA("Selaura Runtime Console");
-
-    FILE* fp;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-    freopen_s(&fp, "CONIN$", "r", stdin);
-
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (hOut != INVALID_HANDLE_VALUE) {
-        DWORD mode = 0;
-        if (GetConsoleMode(hOut, &mode)) {
-            SetConsoleMode(hOut, mode | 0x0004);
-        }
-    }
+    selaura::console = std::make_unique<selaura::console_impl>();
+    auto sink = std::make_shared<selaura::console_sink>();
+    spdlog::set_default_logger(std::make_shared<spdlog::logger>("Selaura", sink));
 
     selaura::detail::get_registry().push_back({ "sdk.dll", fakeImportResolver });
     selaura::delay_loader::load_all_imports();
 
     selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::enable();
+
+    // todo: finish event system
 
     const int target_ms = 5000;
     const int interval_ms = 100;
@@ -49,7 +35,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
         if (keys_down) {
             hold_time += interval_ms;
             if (hold_time % 1000 == 0) {
-                fmt::println("Ejecting in {}s...", (target_ms - hold_time) / 1000);
+                spdlog::info("Ejecting in {}s...", (target_ms - hold_time) / 1000);
             }
         } else {
             hold_time = 0;
