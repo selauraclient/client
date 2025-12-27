@@ -1,6 +1,7 @@
 #pragma once
 #define CLIENT_VERSION "0.10"
 #define MCAPI __declspec(dllimport)
+#define SELAURA_EXPORT extern "C" __declspec(dllexport)
 
 #define NOMINMAX
 #include <dwmapi.h>
@@ -29,10 +30,6 @@
 #include <entt/entt.hpp>
 #include <entt/core/type_info.hpp>
 
-#if defined(_MSC_VER) && defined(__clang__)
-#include <platform/entt_clang.hpp>
-#endif
-
 #include <fmt/base.h>
 #include <fmt/format.h>
 
@@ -42,15 +39,29 @@
 #include <libhat/memory_protector.hpp>
 #include <libhat/process.hpp>
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui.h>
+#include <backends/imgui_impl_dx11.h>
+#include <backends/imgui_impl_dx12.h>
+#include <backends/imgui_impl_win32.h>
+
+#include <memory/cleanup.hpp>
 #include <memory/memory.hpp>
 #include <memory/patterns.hpp>
 #include <memory/delayloader/delayloader.hpp>
+
+#include <memory/detour.hpp>
+#include <memory/hook.hpp>
 
 #include <sdk/network/IPacketHandlerDispatcher.hpp>
 #include <sdk/network/Packet.hpp>
 #include <sdk/network/MinecraftPackets.hpp>
 #include <sdk/network/PacketHandlerDispatcher.hpp>
 
+#include <sdk/renderer/bgfx.hpp>
+#include <sdk/renderer/LevelRenderer.hpp>
 #include <sdk/renderer/ScreenView.hpp>
 
 #include <sdk/world/Dimension.hpp>
+
+#include <memory/hooks/D3DHooks.hpp>

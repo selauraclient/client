@@ -30,20 +30,22 @@ namespace selaura {
 
     class delay_loader {
     public:
-        static void load_all_imports(std::string_view target_dll, detail::resolver_fn resolver) {
-            const auto* pidd = find_descriptor(target_dll);
-            if (!pidd) return;
+        static void load_all_imports() {
+            for (const auto& config : detail::get_registry()) {
+                const auto* pidd = find_descriptor(config.target_dll);
+                if (!pidd) continue;
 
-            const auto iat = get_rva_ptr<IMAGE_THUNK_DATA>(pidd->rvaIAT);
-            const auto int_table = get_rva_ptr<IMAGE_THUNK_DATA>(pidd->rvaINT);
+                auto* iat = get_rva_ptr<IMAGE_THUNK_DATA>(pidd->rvaIAT);
+                auto* int_table = get_rva_ptr<IMAGE_THUNK_DATA>(pidd->rvaINT);
 
-            size_t count = 0;
-            while (int_table[count].u1.Function) count++;
-
-            for (size_t i = 0; i < count; ++i) {
-                if (IMAGE_SNAP_BY_ORDINAL(int_table[i].u1.Ordinal)) {
-                    uint32_t ord = static_cast<uint32_t>(IMAGE_ORDINAL(int_table[i].u1.Ordinal));
-                    iat[i].u1.Function = resolver(ord);
+                for (size_t i = 0; int_table[i].u1.Function != 0; ++i) {
+                    if (IMAGE_SNAP_BY_ORDINAL(int_table[i].u1.Ordinal)) {
+                        uint32_t ord = static_cast<uint32_t>(IMAGE_ORDINAL(int_table[i].u1.Ordinal));
+                        uintptr_t resolved = config.resolver(ord);
+                        if (resolved) {
+                            write_iat(reinterpret_cast<FARPROC*>(&iat[i].u1.Function), resolved);
+                        }
+                    }
                 }
             }
         }
@@ -79,7 +81,6 @@ namespace selaura {
 
             return reinterpret_cast<FARPROC>(resolved_addr);
         }
-
     private:
         template <typename T>
         static T* get_rva_ptr(uint32_t rva) {

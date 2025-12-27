@@ -54,19 +54,33 @@ add_custom_target(GenerateSdk
         ${SDK_LIB}
 )
 
-add_library(Selaura SHARED
-        dllmain.cpp
-)
-
 include(cmake/CPM.cmake)
 
 CPMAddPackage("gh:BasedInc/libhat@0.9.0")
 CPMAddPackage("gh:fmtlib/fmt#11.1.4")
 CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
 CPMAddPackage("gh:cursey/SafetyHook#main")
+CPMAddPackage("gh:ocornut/imgui#master")
+
+
+add_library(Selaura SHARED
+        core/dllmain.cpp
+
+        ${imgui_SOURCE_DIR}/imgui.cpp
+        ${imgui_SOURCE_DIR}/imgui_demo.cpp
+        ${imgui_SOURCE_DIR}/imgui_draw.cpp
+        ${imgui_SOURCE_DIR}/imgui_tables.cpp
+        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
+
+        memory/hooks/D3DHooks.cpp
+)
 
 target_include_directories(Selaura PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}
 )
 
 target_link_libraries(Selaura PUBLIC
@@ -80,6 +94,7 @@ target_link_libraries(Selaura PUBLIC
         d3d11.lib
         d3d12.lib
         dxgi.lib
+        d3dcompiler.lib
 )
 
 add_dependencies(Selaura GenerateSdk)

@@ -5,5 +5,5 @@ class UIRenderContext;
 
 class ScreenView {
 public:
-    MCAPI void setupAndRender(UIRenderContext& ctx);
+    MCAPI void render(UIRenderContext& ctx);
 };
