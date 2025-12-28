@@ -9,8 +9,14 @@ CPP_OUTPUT = BASE_DIR / "../patterns/resolver.hpp"
 
 LIB_NAME = "sdk.dll"
 
+def build_pattern_call(entry: dict) -> str:
+    if "instruction" in entry:
+        return entry["instruction"]
 
-def build_pattern_call(signature: str, entry: dict) -> str:
+    signature = entry.get("signature")
+    if not signature:
+        raise ValueError(f"Entry for {entry.get('symbol')} must have 'signature' or 'instruction'")
+
     has_deref = "deref" in entry
     has_ref = "ref" in entry
 
@@ -21,17 +27,17 @@ def build_pattern_call(signature: str, entry: dict) -> str:
         offset = entry["deref"]
         return (
             f'selaura::pattern<"{signature}", '
-            f'selaura::signature_offset<selaura::deref, {offset}>>::resolve()'
+            f'selaura::signature_offset<selaura::deref, {offset}>>::resolve();'
         )
 
     if has_ref:
         offset = entry["ref"]
         return (
             f'selaura::pattern<"{signature}", '
-            f'selaura::signature_offset<selaura::ref, {offset}>>::resolve()'
+            f'selaura::signature_offset<selaura::ref, {offset}>>::resolve();'
         )
 
-    return f'selaura::pattern<"{signature}">::resolve()'
+    return f'selaura::pattern<"{signature}">::resolve();'
 
 
 def main():
@@ -52,18 +58,18 @@ def main():
         "#pragma once",
         "#include <pch.hpp>",
         "",
+        "// Auto-generated function",
         "inline auto fakeImportResolver = +[](std::uint64_t ordinal) -> std::uintptr_t {",
         "    switch (static_cast<int>(ordinal)) {",
     ]
 
     for idx, entry in enumerate(data, start=1):
         symbol = entry["symbol"]
-        signature = entry["signature"]
 
-        call = build_pattern_call(signature, entry)
+        call = build_pattern_call(entry)
 
         cpp_lines.append(f"        case {idx}: // {symbol}")
-        cpp_lines.append(f"            return {call};")
+        cpp_lines.append(f"            return {call}")
 
     cpp_lines.extend([
         "        default:",

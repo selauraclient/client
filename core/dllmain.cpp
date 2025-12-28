@@ -16,12 +16,26 @@ void EjectAndExit(HMODULE hModule) {
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::console = std::make_unique<selaura::console_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
-    spdlog::set_default_logger(std::make_shared<spdlog::logger>("Selaura", sink));
+
+    auto logger = std::make_shared<spdlog::logger>("Selaura", sink);
+    logger->set_pattern("[%H:%M:%S] [%l] %v");
+
+    spdlog::set_default_logger(logger);
+    spdlog::set_level(spdlog::level::trace);
 
     selaura::detail::get_registry().push_back({ "sdk.dll", fakeImportResolver });
     selaura::delay_loader::load_all_imports();
 
+    selaura::hook<&WndProc>::enable();
     selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::enable();
+
+
+    spdlog::trace("trace");
+    spdlog::debug("debug");
+    spdlog::info("info");
+    spdlog::warn("warn");
+    spdlog::error("error");
+    spdlog::critical("critical");
 
     // todo: finish event system
 

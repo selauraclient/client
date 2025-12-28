@@ -40,14 +40,9 @@ namespace selaura {
         static auto call(Args&&... args) {
             using FnType = decltype(T);
 
-            if constexpr (std::is_member_function_pointer_v<FnType>) {
-                return hook_storage<T>::m_hook
-                    .template call<typename selaura::fn_traits<FnType>::ret>(
-                        std::forward<Args>(args)...);
-            } else {
-                return hook_storage<T>::m_hook
-                    .template call<Args...>(std::forward<Args>(args)...);
-            }
+            return hook_storage<T>::m_hook
+        .template call<typename selaura::fn_traits<FnType>::ret>(
+            std::forward<Args>(args)...);
         }
 
     private:

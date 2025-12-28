@@ -8,6 +8,7 @@
 #include <Psapi.h>
 #include <shlobj_core.h>
 #include <Windows.h>
+#include <GameInput.h>
 #include <winrt/base.h>
 
 #include <d3d11.h>
@@ -57,6 +58,8 @@
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
 
+#include <sdk/core/wndproc.hpp>
+
 #include <sdk/network/IPacketHandlerDispatcher.hpp>
 #include <sdk/network/Packet.hpp>
 #include <sdk/network/MinecraftPackets.hpp>
@@ -69,6 +72,7 @@
 #include <sdk/world/Dimension.hpp>
 
 #include <memory/hooks/D3DHooks.hpp>
+#include <memory/hooks/InputHooks.hpp>
 
 #include <core/console.hpp>
 #include <core/console_sink.hpp>

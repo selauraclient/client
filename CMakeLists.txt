@@ -80,6 +80,8 @@ add_library(Selaura SHARED
         ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
 
         memory/hooks/D3DHooks.cpp
+        memory/hooks/InputHooks.cpp
+
         core/console.cpp
 )
 
@@ -101,6 +103,7 @@ target_link_libraries(Selaura PUBLIC
         d3d12.lib
         dxgi.lib
         d3dcompiler.lib
+        gameinput.lib
 )
 
 add_dependencies(Selaura GenerateSdk)
