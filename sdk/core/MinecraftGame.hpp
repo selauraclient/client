@@ -3,8 +3,10 @@
 
 class MinecraftGame {
 public:
-    std::byte pad[0x9D0];
-    std::map<SubClientId, std::shared_ptr<ClientInstance>> mClientInstances;
+    using client_instances_type = std::map<SubClientId, std::shared_ptr<ClientInstance>>;
+    client_instances_type $getSwapChain() {
+        return hat::member_at<client_instances_type>(this, 0x9D0);
+    }
 
     MCAPI void _update();
 };

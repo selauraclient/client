@@ -9,8 +9,9 @@ namespace bgfx {
     namespace d3d11 {
         class RenderContextD3D11 {
         public:
-            std::byte pad[0x228];
-            IDXGISwapChain* mSwapChain;
+            IDXGISwapChain* $getSwapChain() {
+                return hat::member_at<IDXGISwapChain*>(this, 0x228);
+            }
 
             MCAPI void submit(Frame* _render, ClearQuad& _clearQuad, TextVideoMemBlitter& _textVideoMemBlitter);
         };

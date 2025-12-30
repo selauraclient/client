@@ -1,8 +1,14 @@
 #include <pch.hpp>
 #include <memory/patterns/resolver.hpp>
 
+#include <memory/hooks/CoreHooks.cpp>
+#include <memory/hooks/D3DHooks.cpp>
+#include <memory/hooks/InputHooks.cpp>
+
+
 void EjectAndExit(HMODULE hModule) {
     spdlog::info("Ejecting Selaura...");
+    selaura::remove_wndproc(FindWindowA("Bedrock", nullptr));
     selaura::detail::run_cleanup();
 
     Sleep(100);
@@ -29,7 +35,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
 
     selaura::hook<&MinecraftGame::_update>::enable();
     selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::enable();
-    selaura::hook<&WndProc>::enable();
+    selaura::init_wndproc(FindWindowA("Bedrock", nullptr));
 
     spdlog::debug("Injection completed in {:.2f}s", inject_timer.elapsed().count());
 

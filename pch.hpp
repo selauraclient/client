@@ -62,7 +62,6 @@
 #include <sdk/core/SubClientId.hpp>
 #include <sdk/core/ClientInstance.hpp>
 #include <sdk/core/MinecraftGame.hpp>
-#include <sdk/core/wndproc.hpp>
 
 #include <sdk/network/IPacketHandlerDispatcher.hpp>
 #include <sdk/network/Packet.hpp>
@@ -75,9 +74,13 @@
 
 #include <sdk/world/Dimension.hpp>
 
-#include <memory/hooks/CoreHooks.hpp>
-#include <memory/hooks/D3DHooks.hpp>
-#include <memory/hooks/InputHooks.hpp>
-
 #include <core/console.hpp>
 #include <core/console_sink.hpp>
+
+#define OFFSET_ACCESSOR(Type, Name, Offset)                  \
+inline Type $##Name() {                                         \
+return hat::member_at<Type>(this, Offset);           \
+}                                                        \
+inline Type $##Name() const {                                   \
+return hat::member_at<Type>(this, Offset);           \
+}

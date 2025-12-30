@@ -1,5 +1,8 @@
-#include "CoreHooks.hpp"
+#include <pch.hpp>
 
-void selaura::detour<&MinecraftGame::_update>::hk(MinecraftGame* thisptr) {
-    return selaura::hook<&MinecraftGame::_update>::call(thisptr);
-}
+template <>
+struct selaura::detour<&MinecraftGame::_update> {
+    static void hk(MinecraftGame* thisptr) {
+        return selaura::hook<&MinecraftGame::_update>::call(thisptr);
+    }
+};
