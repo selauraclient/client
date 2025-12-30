@@ -22,5 +22,10 @@
 	{
 		"symbol": "?WndProc@@YA_JPEAUHWND__@@I_K_J@Z",
 		"instruction": "static_cast<std::uintptr_t>(GetWindowLongPtrW(FindWindowA(\"Bedrock\", nullptr), GWLP_WNDPROC));"
+	},
+	{
+		"symbol": "?_update@MinecraftGame@@QEAAXXZ",
+		"signature": "E8 ? ? ? ? 48 8B 8E ? ? ? ? BA ? ? ? ? E8 ? ? ? ? 48 8B BE",
+		"deref": 1
 	}
 ]

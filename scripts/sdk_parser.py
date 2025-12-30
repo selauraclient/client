@@ -3,9 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-INPUT_JSON = BASE_DIR / "../patterns/patterns.json"
-DEF_OUTPUT = BASE_DIR / "../../sdk/sdk.def"
-CPP_OUTPUT = BASE_DIR / "../patterns/resolver.hpp"
+INPUT_JSON = BASE_DIR / "patterns.json"
+DEF_OUTPUT = BASE_DIR / "../sdk/sdk.def"
+CPP_OUTPUT = BASE_DIR / "../memory/patterns/resolver.hpp"
 
 LIB_NAME = "sdk.dll"
 

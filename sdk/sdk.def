@@ -6,3 +6,4 @@ EXPORTS
     ?render@ScreenView@@QEAAXAEAVUIRenderContext@@@Z @4 NONAME
     ?submit@RenderContextD3D11@d3d11@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z @5 NONAME
     ?WndProc@@YA_JPEAUHWND__@@I_K_J@Z @6 NONAME
+    ?_update@MinecraftGame@@QEAAXXZ @7 NONAME

@@ -14,6 +14,7 @@ void EjectAndExit(HMODULE hModule) {
 }
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
+    spdlog::stopwatch inject_timer;
     selaura::console = std::make_unique<selaura::console_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
 
@@ -26,16 +27,11 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::detail::get_registry().push_back({ "sdk.dll", fakeImportResolver });
     selaura::delay_loader::load_all_imports();
 
-    selaura::hook<&WndProc>::enable();
+    selaura::hook<&MinecraftGame::_update>::enable();
     selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::enable();
+    selaura::hook<&WndProc>::enable();
 
-
-    spdlog::trace("trace");
-    spdlog::debug("debug");
-    spdlog::info("info");
-    spdlog::warn("warn");
-    spdlog::error("error");
-    spdlog::critical("critical");
+    spdlog::debug("Injection completed in {:.2f}s", inject_timer.elapsed().count());
 
     // todo: finish event system
 

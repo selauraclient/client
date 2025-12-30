@@ -8,11 +8,11 @@ find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 
 set(SDK_PARSER
-        ${CMAKE_CURRENT_SOURCE_DIR}/memory/delayloader/sdk_parser.py
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py
 )
 
 set(PATTERNS_JSON
-        ${CMAKE_CURRENT_SOURCE_DIR}/memory/patterns/patterns.json
+        ${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json
 )
 
 set(SDK_DEF
@@ -79,6 +79,7 @@ add_library(Selaura SHARED
         ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
 
+        memory/hooks/CoreHooks.cpp
         memory/hooks/D3DHooks.cpp
         memory/hooks/InputHooks.cpp
 

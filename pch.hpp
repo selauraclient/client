@@ -37,6 +37,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/base_sink-inl.h>
 #include <spdlog/sinks/stdout_color_sinks-inl.h>
+#include <spdlog/stopwatch.h>
 
 #include <libhat/access.hpp>
 #include <libhat/signature.hpp>
@@ -58,6 +59,9 @@
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
 
+#include <sdk/core/SubClientId.hpp>
+#include <sdk/core/ClientInstance.hpp>
+#include <sdk/core/MinecraftGame.hpp>
 #include <sdk/core/wndproc.hpp>
 
 #include <sdk/network/IPacketHandlerDispatcher.hpp>
@@ -71,6 +75,7 @@
 
 #include <sdk/world/Dimension.hpp>
 
+#include <memory/hooks/CoreHooks.hpp>
 #include <memory/hooks/D3DHooks.hpp>
 #include <memory/hooks/InputHooks.hpp>
 
