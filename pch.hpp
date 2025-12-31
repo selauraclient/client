@@ -23,6 +23,7 @@
 #include <span>
 #include <string>
 #include <tuple>
+#include <typeindex>
 #include <type_traits>
 #include <vector>
 
@@ -46,6 +47,7 @@
 #include <libhat/process.hpp>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEBUG_PARANOID
 #include <imgui.h>
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_dx12.h>
@@ -58,6 +60,9 @@
 
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
+
+#include <core/event/event.hpp>
+#include <core/event/event_manager.hpp>
 
 #include <sdk/core/SubClientId.hpp>
 #include <sdk/core/ClientInstance.hpp>

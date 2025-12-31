@@ -6,6 +6,7 @@ namespace selaura {
     template <auto T>
     struct hook_storage {
         static inline safetyhook::InlineHook m_hook;
+        static inline std::mutex m_mutex;
     };
 
     template <auto T, auto detour = nullptr>
@@ -33,12 +34,14 @@ namespace selaura {
         }
 
         static void disable() {
+            std::scoped_lock lock(hook_storage<T>::m_mutex);
             hook_storage<T>::m_hook = {};
         }
 
         template <typename... Args>
         static auto call(Args&&... args) {
             using FnType = decltype(T);
+            std::scoped_lock lock(hook_storage<T>::m_mutex);
 
             return hook_storage<T>::m_hook
         .template call<typename selaura::fn_traits<FnType>::ret>(
@@ -67,6 +70,7 @@ namespace selaura {
         static void enable_internal(void* target) {
             check_detour();
 
+            std::scoped_lock lock(hook_storage<T>::m_mutex);
             auto& state = hook_storage<T>::m_hook;
             if (state || !target) return;
 

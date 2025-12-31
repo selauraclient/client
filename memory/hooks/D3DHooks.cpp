@@ -155,6 +155,11 @@ struct selaura::detour<&IDXGISwapChain::Present> {
 
         ID3D11RenderTargetView* rtv_ptr = main_rtv.get();
         device_ctx->OMSetRenderTargets(1, &rtv_ptr, NULL);
+
+        selaura::render_event ev{};
+        ev.swapChain = thisptr;
+        selaura::event_manager->dispatch(ev);
+
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
         return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
