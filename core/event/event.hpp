@@ -10,5 +10,7 @@ namespace selaura {
     struct mcgame_update final : event {};
     struct render_event final : event {
         IDXGISwapChain* swapChain;
+        float screenWidth;
+        float screenHeight;
     };
 };

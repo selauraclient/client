@@ -131,6 +131,7 @@ add_library(Selaura SHARED
         memory/hooks/D3DHooks.cpp
         memory/hooks/InputHooks.cpp
         core/console.cpp
+        core/renderer/sui.cpp
         ${EMBEDDED_RESOURCES}
 )
 
@@ -156,6 +157,7 @@ target_link_libraries(Selaura PUBLIC
         dxgi.lib
         d3dcompiler.lib
         gameinput.lib
+        windowsapp
 )
 
 add_dependencies(Selaura GenerateSdk)

@@ -3,15 +3,33 @@
 namespace selaura::shaders {
     namespace geometry {
         inline constexpr char vertex[] = R"(
-            cbuffer projection : register(b0) { matrix mat; };
-            struct VS_INPUT { float3 pos : POSITION; float4 col : COLOR; float2 uv : TEXCOORD; float4 data : DATA; };
-            struct VS_OUTPUT { float4 pos : SV_POSITION; float4 col : COLOR; float2 uv : TEXCOORD; float4 data : DATA; };
+            cbuffer projection : register(b0) {
+                matrix mat;
+            };
+
+            struct VS_INPUT {
+                float3 pos : POSITION;
+                float4 col : COLOR;
+                float2 uv : TEXCOORD;
+                float4 data : DATA;
+                float4 radii : RADII;
+            };
+
+            struct VS_OUTPUT {
+                float4 pos : SV_POSITION;
+                float4 col : COLOR;
+                float2 uv : TEXCOORD;
+                float4 data : DATA;
+                float4 radii : RADII;
+            };
+
             VS_OUTPUT main(VS_INPUT input) {
                 VS_OUTPUT output;
                 output.pos = mul(float4(input.pos, 1.0f), mat);
                 output.col = input.col;
                 output.uv = input.uv;
                 output.data = input.data;
+                output.radii = input.radii;
                 return output;
             }
         )";
@@ -19,20 +37,30 @@ namespace selaura::shaders {
         inline constexpr char pixel[] = R"(
             Texture2DArray tex : register(t0);
             SamplerState smp : register(s0);
-            struct PS_INPUT { float4 pos : SV_POSITION; float4 col : COLOR; float2 uv : TEXCOORD; float4 data : DATA; };
+
+            struct PS_INPUT {
+                float4 pos : SV_POSITION;
+                float4 col : COLOR;
+                float2 uv : TEXCOORD;
+                float4 data : DATA;
+                float4 radii : RADII;
+            };
 
             float median(float r, float g, float b) {
                 return max(min(r, g), min(max(r, g), b));
             }
 
-            float sd_rounded_box(float2 p, float2 b, float r) {
-                float2 q = abs(p) - b + r;
-                return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
+            float sd_rounded_box(float2 p, float2 b, float4 r) {
+                float2 r_val = (p.x > 0.0) ? r.yz : r.xw;
+                float radius = (p.y > 0.0) ? r_val.y : r_val.x;
+
+                float2 q = abs(p) - b + radius;
+                return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
             }
 
             float4 main(PS_INPUT input) : SV_TARGET {
                 float2 size = input.data.xy;
-                float param = input.data.z;
+                float stroke_width = input.data.z;
                 float type = input.data.w;
 
                 if (type >= 3.0) {
@@ -56,14 +84,22 @@ namespace selaura::shaders {
                 }
 
                 if (type >= 2.0) {
-                    float4 color = input.col * tex.Sample(smp, float3(input.uv, floor(param + 0.05)));
+                    float4 color = input.col * tex.Sample(smp, float3(input.uv, floor(stroke_width + 0.05)));
                     if (color.a < 0.01) discard;
                     return color;
                 }
 
                 float2 p = (input.uv - 0.5) * size;
-                float d = sd_rounded_box(p, size * 0.5, min(param, min(size.x, size.y) * 0.5));
-                float alpha = 1.0 - smoothstep(-fwidth(d), fwidth(d), d);
+                float d = sd_rounded_box(p, size * 0.5, input.radii);
+
+                float alpha = 0.0;
+                if (stroke_width > 0.001) {
+                    float inner_d = d + stroke_width;
+                    alpha = saturate(0.5 - d) - saturate(0.5 - inner_d);
+                } else {
+                    alpha = saturate(0.5 - d);
+                }
+
                 if (alpha <= 0.001) discard;
                 return float4(input.col.rgb, input.col.a * alpha);
             }

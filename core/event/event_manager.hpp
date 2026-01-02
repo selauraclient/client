@@ -3,39 +3,65 @@
 
 namespace selaura {
     struct event_manager_impl {
+        struct listener_entry {
+            void* addr;
+            std::function<void(selaura::event&)> callback;
+        };
+
+        using ListenerMap = std::map<std::type_index, std::vector<listener_entry>>;
+
+        event_manager_impl() {
+            data.store(std::make_shared<ListenerMap>());
+        }
+
         template<typename T>
         void subscribe(void(*callback)(T&)) {
-            std::unique_lock lock(mutex);
             auto type = std::type_index(typeid(T));
+            void* target = reinterpret_cast<void*>(callback);
 
-            listeners[type].push_back({
-                reinterpret_cast<void*>(callback),
-                [callback](selaura::event& e) { callback(static_cast<T&>(e)); }
-            });
+            auto old_map = data.load();
+            while (true) {
+                auto new_map = std::make_shared<ListenerMap>(*old_map);
+
+                (*new_map)[type].push_back({
+                    target,
+                    [callback](selaura::event& e) { callback(static_cast<T&>(e)); }
+                });
+
+                if (data.compare_exchange_strong(old_map, new_map)) {
+                    break;
+                }
+            }
         }
 
         template<typename T>
         void unsubscribe(void(*callback)(T&)) {
-            std::unique_lock lock(mutex);
             auto type = std::type_index(typeid(T));
-
-            if (!listeners.contains(type)) return;
-
-            auto& entries = listeners[type];
             void* target = reinterpret_cast<void*>(callback);
 
-            std::erase_if(entries, [target](const listener_entry& entry) {
-                return entry.addr == target;
-            });
+            auto old_map = data.load();
+            while (true) {
+                if (!old_map->contains(type)) return;
+
+                auto new_map = std::make_shared<ListenerMap>(*old_map);
+                auto& entries = (*new_map)[type];
+
+                std::erase_if(entries, [target](const listener_entry& entry) {
+                    return entry.addr == target;
+                });
+
+                if (data.compare_exchange_strong(old_map, new_map)) {
+                    break;
+                }
+            }
         }
 
         template<typename T>
         void dispatch(T& event) {
-            std::shared_lock lock(mutex);
-            auto type = std::type_index(typeid(T));
+            auto current_map = data.load(std::memory_order_acquire);
 
-            auto it = listeners.find(type);
-            if (it != listeners.end()) {
+            auto it = current_map->find(std::type_index(typeid(T)));
+            if (it != current_map->end()) {
                 for (const auto& entry : it->second) {
                     entry.callback(event);
                 }
@@ -43,18 +69,11 @@ namespace selaura {
         }
 
         void clear() {
-            std::unique_lock lock(mutex);
-            listeners.clear();
+            data.store(std::make_shared<ListenerMap>());
         }
 
     private:
-        struct listener_entry {
-            void* addr;
-            std::function<void(selaura::event&)> callback;
-        };
-
-        std::map<std::type_index, std::vector<listener_entry>> listeners;
-        mutable std::shared_mutex mutex;
+        std::atomic<std::shared_ptr<ListenerMap>> data;
     };
 
     inline std::unique_ptr<event_manager_impl> event_manager;

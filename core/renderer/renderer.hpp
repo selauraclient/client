@@ -12,6 +12,7 @@ namespace selaura {
         glm::vec4 color;
         glm::vec2 uv;
         glm::vec4 data;
+        glm::vec4 radii;
     };
 
     struct draw_cmd {
@@ -90,9 +91,11 @@ namespace selaura {
     public:
         void init(ID3D11Device* p_device);
         void set_blend_mode(blend_mode mode) { tess.current_blend = mode; }
+        void push_rect_ex(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 colors[4], float type, float rotation, float stroke_width);
+        void draw_filled_rect(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float rotation = 0.0f);
         void draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation = 0.0f);
+        void draw_rect_outline(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float stroke_width, float rotation = 0.0f);
         void draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation = 0.0f);
-        void draw_circle(float x, float y, float radius, glm::vec4 color, float rotation = 0.0f);
         void draw_image(Resource res, float x, float y, float w, float h, float radius = 0.0f, glm::vec4 tint = {255, 255, 255, 255}, float rotation = 0.0f);
         void draw_gif(Resource res, float x, float y, float w, float h, float radius = 0.0f);
         void set_font(Resource tex_res, Resource json_res);

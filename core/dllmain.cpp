@@ -18,6 +18,22 @@ void EjectAndExit(HMODULE hModule) {
     FreeLibraryAndExitThread(hModule, 0);
 }
 
+void drawMenu(selaura::render_event& ev) {
+    using namespace selaura;
+    auto menu_width = ev.screenWidth * 0.55;
+    auto menu_height = ev.screenHeight * 0.65;
+
+    auto menu_x = (ev.screenWidth - menu_width) / 2;
+    auto menu_y = (ev.screenHeight - menu_height) / 2;
+
+    auto sidebar_width = menu_width * 0.27;
+
+    sui::panel(menu_x, menu_y, menu_width, menu_height, 15);
+    sui::panel(menu_x, menu_y, sidebar_width, menu_height, 15, sui::panel_types::raised);
+    sui::logo(menu_x + 15, menu_y + 15, 32);
+    sui::text(menu_x + 55, menu_y + 38, 24, "selaura");
+}
+
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
     selaura::event_manager = std::make_unique<selaura::event_manager_impl>();
@@ -42,6 +58,8 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::debug("Hooks created in {:.0f}ms", hook_timer.elapsed().count() * 1000);
 
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
+
+    selaura::event_manager->subscribe(&drawMenu);
 
     const int target_ms = 5000;
     const int interval_ms = 100;

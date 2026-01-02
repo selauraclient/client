@@ -180,10 +180,49 @@ namespace selaura {
         }
     }
 
-    void renderer_impl::draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation) {
+    void renderer_impl::push_rect_ex(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 colors[4], float type, float rotation, float stroke_width) {
+        float cx = x + w * 0.5f, cy = y + h * 0.5f;
+        struct { float x, y; } corners[4] = { {x, y}, {x + w, y}, {x + w, y + h}, {x, y + h} };
+
+        glm::vec4 shader_data = { w, h, stroke_width, type };
+        glm::vec4 final_colors[4];
+
+        for (int i = 0; i < 4; i++) {
+            final_colors[i] = normalize_color(colors[i]);
+            rotate_point(corners[i].x, corners[i].y, cx, cy, rotation);
+        }
+
+        vertex v[6] = {
+            {{corners[0].x, corners[0].y, 0.5f}, final_colors[0], {0, 0}, shader_data, radii},
+            {{corners[1].x, corners[1].y, 0.5f}, final_colors[1], {1, 0}, shader_data, radii},
+            {{corners[3].x, corners[3].y, 0.5f}, final_colors[3], {0, 1}, shader_data, radii},
+            {{corners[1].x, corners[1].y, 0.5f}, final_colors[1], {1, 0}, shader_data, radii},
+            {{corners[2].x, corners[2].y, 0.5f}, final_colors[2], {1, 1}, shader_data, radii},
+            {{corners[3].x, corners[3].y, 0.5f}, final_colors[3], {0, 1}, shader_data, radii}
+        };
+
+        for (int i = 0; i < 6; i++) tess.vertices.push_back(v[i]);
+
+        if (tess.commands.empty() || tess.commands.back().texture != tess.current_texture || tess.commands.back().blend != tess.current_blend)
+            tess.commands.push_back({ 6, tess.current_blend, tess.current_texture });
+        else
+            tess.commands.back().count += 6;
+    }
+
+    void renderer_impl::draw_filled_rect(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float rotation) {
         tess.current_texture = nullptr;
         glm::vec4 colors[4] = { color, color, color, color };
-        push_rect_gradient(x, y, w, h, radius, colors, 0.0f, rotation, -1.0f);
+        push_rect_ex(x, y, w, h, radii, colors, 0.0f, rotation, 0.0f);
+    }
+
+    void renderer_impl::draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation) {
+        draw_filled_rect(x, y, w, h, glm::vec4(radius), color, rotation);
+    }
+
+    void renderer_impl::draw_rect_outline(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float stroke_width, float rotation) {
+        tess.current_texture = nullptr;
+        glm::vec4 colors[4] = { color, color, color, color };
+        push_rect_ex(x, y, w, h, radii, colors, 0.0f, rotation, stroke_width);
     }
 
     void renderer_impl::draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation) {
@@ -200,19 +239,21 @@ namespace selaura {
 
     void renderer_impl::draw_gif(Resource res, float x, float y, float w, float h, float radius) {
         auto gif = get_or_create_gif(res);
-        if (!gif) return;
+        if (!gif || gif->total_duration <= 0) return;
 
-        auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()
+        static auto start_time = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - start_time
         ).count();
 
-        int loop_time = (int)(now % gif->total_duration);
+        int loop_time = static_cast<int>(elapsed % gif->total_duration);
+
         int frame = 0;
-        int accum = 0;
+        int current_accum = 0;
 
         for (int i = 0; i < gif->frame_count; i++) {
-            accum += gif->delays[i];
-            if (loop_time < accum) {
+            current_accum += gif->delays[i];
+            if (loop_time < current_accum) {
                 frame = i;
                 break;
             }
@@ -220,6 +261,7 @@ namespace selaura {
 
         tess.current_texture = gif->srv.get();
         glm::vec4 white[4] = { {1,1,1,1}, {1,1,1,1}, {1,1,1,1}, {1,1,1,1} };
+
         push_rect_gradient(x, y, w, h, radius, white, 2.0f, 0.0f, (float)frame);
     }
 
@@ -330,9 +372,10 @@ namespace selaura {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0},
-            {"DATA",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0}
+            {"DATA",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 36, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"RADII",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 52, D3D11_INPUT_PER_VERTEX_DATA, 0}
         };
-        device->CreateInputLayout(input_layout, 4, vb_blob->GetBufferPointer(), vb_blob->GetBufferSize(), layout.put());
+        device->CreateInputLayout(input_layout, 5, vb_blob->GetBufferPointer(), vb_blob->GetBufferSize(), layout.put());
 
         D3D11_BUFFER_DESC cb_desc{};
         cb_desc.ByteWidth      = sizeof(DirectX::XMMATRIX);

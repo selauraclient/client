@@ -14,8 +14,6 @@ LOAD_RESOURCE(Poppins_msdf_json)
 LOAD_RESOURCE(FontAwesome_msdf_png)
 LOAD_RESOURCE(FontAwesome_msdf_json)
 
-LOAD_RESOURCE(bubblebass_gif)
-
 template <>
 struct selaura::detour<&IDXGISwapChain::Present> {
     static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {
@@ -171,15 +169,11 @@ struct selaura::detour<&IDXGISwapChain::Present> {
             GET_RESOURCE(Poppins_msdf_json)
         );
 
-        selaura::renderer->draw_gif(GET_RESOURCE(bubblebass_gif), 50, 50, 500, 370);
-        selaura::renderer->draw_text("we LOVE bubblebass", 100, 500, 32.0f, {255, 255, 255, 255});
-
-        selaura::renderer->set_font(
-            GET_RESOURCE(FontAwesome_msdf_png),
-            GET_RESOURCE(FontAwesome_msdf_json)
-        );
-
-        selaura::renderer->draw_text("\xEF\x9A\xAE", 100, 550, 32.0f, {255, 255, 255, 255});
+        selaura::render_event ev{};
+        ev.swapChain = thisptr;
+        ev.screenWidth = desc.BufferDesc.Width;
+        ev.screenHeight = desc.BufferDesc.Height;
+        selaura::event_manager->dispatch(ev);
 
         selaura::renderer->render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
 
@@ -190,10 +184,6 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         selaura::console->render();
 
         ImGui::Render();
-
-        selaura::render_event ev{};
-        ev.swapChain = thisptr;
-        selaura::event_manager->dispatch(ev);
 
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

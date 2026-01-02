@@ -16,9 +16,12 @@
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
 
+
+#include <atomic>
 #include <bit>
 #include <exception>
 #include <filesystem>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <span>
@@ -72,6 +75,7 @@
 #include <core/event/event_manager.hpp>
 
 #include <core/renderer/renderer.hpp>
+#include <core/renderer/sui.hpp>
 
 #include <sdk/core/SubClientId.hpp>
 #include <sdk/core/ClientInstance.hpp>
