@@ -8,6 +8,9 @@ static winrt::com_ptr<ID3D11RenderTargetView> main_rtv;
 static WNDPROC wnd_proc = nullptr;
 static bool d3d_init = false;
 
+LOAD_RESOURCE(Poppins_msdf_png)
+LOAD_RESOURCE(Poppins_msdf_json)
+
 template <>
 struct selaura::detour<&IDXGISwapChain::Present> {
     static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {
@@ -158,17 +161,12 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         DXGI_SWAP_CHAIN_DESC desc;
         thisptr->GetDesc(&desc);
 
-        selaura::renderer->draw_gradient_rect(50, 50, 200, 200, 0,
-            {255, 255, 255, 255}, {255, 0, 0, 255},
-            {255, 255, 255, 255}, {255, 0, 0, 255}, 45);
+        selaura::renderer->set_font(
+            GET_RESOURCE(Poppins_msdf_png),
+            GET_RESOURCE(Poppins_msdf_json)
+        );
 
-        selaura::renderer->set_blend_mode(selaura::blend_mode::multiply);
-        selaura::renderer->draw_gradient_rect(50, 50, 200, 200, 0,
-            {255, 255, 255, 255}, {255, 255, 255, 255},
-            {0, 0, 0, 255}, {0, 0, 0, 255},
-            45);
-
-        selaura::renderer->set_blend_mode(selaura::blend_mode::normal);
+        selaura::renderer->draw_text("selaura client on top!", 100, 350, 72.0f, {255, 255, 255, 255});
         selaura::renderer->render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
 
         ImGui_ImplDX11_NewFrame();

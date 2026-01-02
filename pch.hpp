@@ -64,6 +64,8 @@
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
 
+#include <core/resource.hpp>
+
 #include <core/event/event.hpp>
 #include <core/event/event_manager.hpp>
 
