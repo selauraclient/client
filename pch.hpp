@@ -28,6 +28,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include <safetyhook.hpp>
 
 #include <glm/glm.hpp>

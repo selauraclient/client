@@ -2,9 +2,7 @@
 #include "shaders.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#include "json.hpp"
+#include <stb_image.h>
 
 namespace selaura {
     void render_buffer::update(ID3D11Device* device, ID3D11DeviceContext* ctx, const std::vector<vertex>& data) {

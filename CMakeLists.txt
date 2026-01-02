@@ -52,6 +52,8 @@ CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
 CPMAddPackage("gh:cursey/SafetyHook#main")
 CPMAddPackage("gh:ocornut/imgui#master")
 CPMAddPackage("gh:g-truc/glm#master")
+CPMAddPackage("gh:nlohmann/json#develop")
+CPMAddPackage("gh:nothings/stb#master")
 CPMAddPackage(URI "gh:gabime/spdlog#v1.x" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
 
 set(MSDF_GEN_EXE "${CMAKE_SOURCE_DIR}/msdf-atlas-gen.exe")
@@ -120,7 +122,12 @@ add_library(Selaura SHARED
         ${EMBEDDED_RESOURCES}
 )
 
-target_include_directories(Selaura PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${imgui_SOURCE_DIR})
+target_include_directories(Selaura PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${imgui_SOURCE_DIR}
+        ${nlohmann_json_SOURCE_DIR}/include
+        ${stb_SOURCE_DIR}
+)
 
 target_link_libraries(Selaura PUBLIC
         libhat::libhat
