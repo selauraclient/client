@@ -344,7 +344,7 @@ namespace selaura {
         s_desc.ComparisonFunc = D3D11_COMPARISON_NEVER;
         s_desc.MinLOD = 0;
         s_desc.MaxLOD = D3D11_FLOAT32_MAX;
-        s_desc.MipLODBias = -0.5f;
+        s_desc.MipLODBias = -0.75f;
 
         device->CreateSamplerState(&s_desc, sampler.put());
     }

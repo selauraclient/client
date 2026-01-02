@@ -166,7 +166,7 @@ struct selaura::detour<&IDXGISwapChain::Present> {
             GET_RESOURCE(Poppins_msdf_json)
         );
 
-        selaura::renderer->draw_text("selaura client on top!", 100, 350, 72.0f, {255, 255, 255, 255});
+        selaura::renderer->draw_text("Selaura Client is the best legit client for Minecraft: Bedrock Edition!", 100, 350, 72.0f, {255, 255, 255, 255});
         selaura::renderer->render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
 
         ImGui_ImplDX11_NewFrame();

@@ -72,7 +72,7 @@ foreach(FONT_PATH ${TTF_FONTS})
 
     add_custom_command(
             OUTPUT ${ATLAS_PNG} ${ATLAS_JSON}
-            COMMAND "${MSDF_GEN_EXE}" -font "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" -format png -type msdf -size 32 -pxrange 2 -imageout "${ATLAS_PNG}" -json "${ATLAS_JSON}"
+            COMMAND "${MSDF_GEN_EXE}" -font "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" -format png -type msdf -size 128 -pxrange 8 -imageout "${ATLAS_PNG}" -json "${ATLAS_JSON}"
             DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" "${MSDF_GEN_EXE}"
             VERBATIM
     )
