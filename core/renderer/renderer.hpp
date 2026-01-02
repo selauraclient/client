@@ -83,7 +83,7 @@ namespace selaura {
         struct MatrixBuffer { DirectX::XMMATRIX projection; };
 
         glm::vec4 normalize_color(glm::vec4 c);
-        void push_rect_gradient(float x, float y, float w, float h, float radius, glm::vec4 colors[4], float type, float rotation);
+        void push_rect_gradient(float x, float y, float w, float h, float radius, glm::vec4 colors[4], float type, float rotation, float param);
         ID3D11ShaderResourceView* get_or_create_texture(Resource res);
         gif_data* get_or_create_gif(Resource res);
 

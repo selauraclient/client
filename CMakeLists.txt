@@ -65,15 +65,27 @@ foreach(FONT_PATH ${TTF_FONTS})
 
     set(ATLAS_PNG "${CMAKE_CURRENT_BINARY_DIR}/resources/${FONT_NAME}_msdf.png")
     set(ATLAS_JSON "${CMAKE_CURRENT_BINARY_DIR}/resources/${FONT_NAME}_msdf.json")
+    set(CHARSET_TXT "${CMAKE_CURRENT_BINARY_DIR}/resources/${FONT_NAME}_charset.txt")
     set(OBJ_PNG "${ATLAS_PNG}.o")
     set(OBJ_JSON "${ATLAS_JSON}.o")
+
+    if(FONT_NAME MATCHES "FontAwesome")
+        set(CHARSET_CONTENT "[0x20, 0x7e], [0xf000, 0xf900]")
+    else()
+        set(CHARSET_CONTENT "[0x20, 0x7e]")
+    endif()
+
+    file(WRITE "${CHARSET_TXT}" "${CHARSET_CONTENT}")
 
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/resources")
 
     add_custom_command(
             OUTPUT ${ATLAS_PNG} ${ATLAS_JSON}
-            COMMAND "${MSDF_GEN_EXE}" -font "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" -format png -type msdf -size 128 -pxrange 8 -imageout "${ATLAS_PNG}" -json "${ATLAS_JSON}"
-            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" "${MSDF_GEN_EXE}"
+            COMMAND "${MSDF_GEN_EXE}" -font "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}"
+            -format png -type msdf -size 128 -pxrange 8
+            -imageout "${ATLAS_PNG}" -json "${ATLAS_JSON}"
+            -charset "${CHARSET_TXT}"
+            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" "${MSDF_GEN_EXE}" "${CHARSET_TXT}"
             VERBATIM
     )
 
