@@ -145,6 +145,32 @@ struct selaura::detour<&IDXGISwapChain::Present> {
 
         if (!main_rtv) return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
 
+        ID3D11RenderTargetView* rtv_ptr = main_rtv.get();
+        device_ctx->OMSetRenderTargets(1, &rtv_ptr, NULL);
+
+        static bool renderer_init = false;
+        if (!renderer_init) {
+            selaura::renderer = std::make_unique<selaura::renderer_impl>();
+            selaura::renderer->init(device.get());
+            renderer_init = true;
+        }
+
+        DXGI_SWAP_CHAIN_DESC desc;
+        thisptr->GetDesc(&desc);
+
+        selaura::renderer->draw_gradient_rect(50, 50, 200, 200, 0,
+            {255, 255, 255, 255}, {255, 0, 0, 255},
+            {255, 255, 255, 255}, {255, 0, 0, 255}, 45);
+
+        selaura::renderer->set_blend_mode(selaura::blend_mode::multiply);
+        selaura::renderer->draw_gradient_rect(50, 50, 200, 200, 0,
+            {255, 255, 255, 255}, {255, 255, 255, 255},
+            {0, 0, 0, 255}, {0, 0, 0, 255},
+            45);
+
+        selaura::renderer->set_blend_mode(selaura::blend_mode::normal);
+        selaura::renderer->render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
+
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
@@ -152,9 +178,6 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         selaura::console->render();
 
         ImGui::Render();
-
-        ID3D11RenderTargetView* rtv_ptr = main_rtv.get();
-        device_ctx->OMSetRenderTargets(1, &rtv_ptr, NULL);
 
         selaura::render_event ev{};
         ev.swapChain = thisptr;

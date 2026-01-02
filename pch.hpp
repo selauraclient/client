@@ -14,6 +14,7 @@
 #include <d3d11.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <d3dcompiler.h>
 
 #include <bit>
 #include <exception>
@@ -28,6 +29,8 @@
 #include <vector>
 
 #include <safetyhook.hpp>
+
+#include <glm/glm.hpp>
 
 #include <entt/entt.hpp>
 #include <entt/core/type_info.hpp>
@@ -63,6 +66,8 @@
 
 #include <core/event/event.hpp>
 #include <core/event/event_manager.hpp>
+
+#include <core/renderer/renderer.hpp>
 
 #include <sdk/core/SubClientId.hpp>
 #include <sdk/core/ClientInstance.hpp>

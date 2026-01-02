@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/fmt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/glm-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/imgui-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/libhat-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/safetyhook-src" vcs="Git" />
@@ -10,6 +11,7 @@
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/zydis-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/zydis-src/dependencies/zycore" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/fmt-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/glm-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/imgui-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/libhat-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-release/_deps/safetyhook-src" vcs="Git" />
