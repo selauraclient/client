@@ -13,7 +13,7 @@ void EjectAndExit(HMODULE hModule) {
     Sleep(100);
 
     spdlog::shutdown();
-    selaura::console->shutdown();
+    selaura::get<selaura::console>().shutdown();
 
     FreeLibraryAndExitThread(hModule, 0);
 }
@@ -36,8 +36,7 @@ void drawMenu(selaura::render_event& ev) {
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
-    selaura::event_manager = std::make_unique<selaura::event_manager_impl>();
-    selaura::console = std::make_unique<selaura::console_impl>();
+    selaura::service_manager = std::make_unique<selaura::service_manager_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
 
     auto logger = std::make_shared<spdlog::logger>("Selaura", sink);
@@ -59,7 +58,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
 
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
 
-    selaura::event_manager->subscribe(&drawMenu);
+    selaura::get<selaura::event_manager>().subscribe(&drawMenu);
 
     const int target_ms = 5000;
     const int interval_ms = 100;

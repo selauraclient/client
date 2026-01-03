@@ -155,16 +155,16 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         device_ctx->OMSetRenderTargets(1, &rtv_ptr, NULL);
 
         static bool renderer_init = false;
+        auto& renderer = selaura::get<selaura::renderer>();
         if (!renderer_init) {
-            selaura::renderer = std::make_unique<selaura::renderer_impl>();
-            selaura::renderer->init(device.get());
+            renderer.init(device.get());
             renderer_init = true;
         }
 
         DXGI_SWAP_CHAIN_DESC desc;
         thisptr->GetDesc(&desc);
 
-        selaura::renderer->set_font(
+        renderer.set_font(
             GET_RESOURCE(Poppins_msdf_png),
             GET_RESOURCE(Poppins_msdf_json)
         );
@@ -173,15 +173,15 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         ev.swapChain = thisptr;
         ev.screenWidth = desc.BufferDesc.Width;
         ev.screenHeight = desc.BufferDesc.Height;
-        selaura::event_manager->dispatch(ev);
+        selaura::get<selaura::event_manager>().dispatch(ev);
 
-        selaura::renderer->render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
+        renderer.render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        selaura::console->render();
+        selaura::get<console>().render();
 
         ImGui::Render();
 

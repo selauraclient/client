@@ -9,7 +9,7 @@ namespace selaura {
             formatter_->format(msg, buf);
 
             ImVec4 log_color = level_to_color(msg.level);
-            selaura::console->push_text(fmt::to_string(buf), log_color);
+            selaura::get<console>().push_text(fmt::to_string(buf), log_color);
         }
 
         void flush_() override {}

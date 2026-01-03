@@ -7,7 +7,7 @@ namespace selaura {
         ImVec4 color;
     };
 
-    class console_impl {
+    class console {
     private:
         std::vector<std::string> cmd_history;
         int cmd_history_pos = 0;
@@ -21,10 +21,8 @@ namespace selaura {
         void push_text(const std::string& text, const ImVec4& color = ImVec4(0.95f, 0.95f, 0.97f, 1.00f));
         void shutdown();
 
-        ~console_impl() {
+        ~console() {
             this->shutdown();
         }
     };
-
-    inline std::unique_ptr<console_impl> console;
 };

@@ -27,7 +27,7 @@ namespace selaura {
         }
     }
 
-    glm::vec4 renderer_impl::normalize_color(glm::vec4 c) {
+    glm::vec4 renderer::normalize_color(glm::vec4 c) {
         bool is_255 = (c.r > 1.0f || c.g > 1.0f || c.b > 1.0f || c.a > 1.0f);
         return is_255 ? (c / 255.0f) : c;
     }
@@ -49,7 +49,7 @@ namespace selaura {
         y = ny + cy;
     }
 
-    ID3D11ShaderResourceView* renderer_impl::get_or_create_texture(Resource res) {
+    ID3D11ShaderResourceView* renderer::get_or_create_texture(Resource res) {
         if (texture_cache.count(res.begin())) {
             return texture_cache[res.begin()].get();
         }
@@ -91,7 +91,7 @@ namespace selaura {
         return (texture_cache[res.begin()] = srv).get();
     }
 
-    gif_data* renderer_impl::get_or_create_gif(Resource res) {
+    gif_data* renderer::get_or_create_gif(Resource res) {
         if (gif_cache.count(res.begin())) {
             return &gif_cache[res.begin()];
         }
@@ -140,7 +140,7 @@ namespace selaura {
         return &(gif_cache[res.begin()] = std::move(new_gif));
     }
 
-    void renderer_impl::push_rect_gradient(float x, float y, float w, float h, float radius, glm::vec4 colors[4], float type, float rotation, float param) {
+    void renderer::push_rect_gradient(float x, float y, float w, float h, float radius, glm::vec4 colors[4], float type, float rotation, float param) {
         float cx = x + w * 0.5f;
         float cy = y + h * 0.5f;
 
@@ -180,7 +180,7 @@ namespace selaura {
         }
     }
 
-    void renderer_impl::push_rect_ex(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 colors[4], float type, float rotation, float stroke_width) {
+    void renderer::push_rect_ex(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 colors[4], float type, float rotation, float stroke_width) {
         float cx = x + w * 0.5f, cy = y + h * 0.5f;
         struct { float x, y; } corners[4] = { {x, y}, {x + w, y}, {x + w, y + h}, {x, y + h} };
 
@@ -209,35 +209,41 @@ namespace selaura {
             tess.commands.back().count += 6;
     }
 
-    void renderer_impl::draw_filled_rect(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float rotation) {
+    void renderer::draw_filled_rect(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float rotation) {
         tess.current_texture = nullptr;
         glm::vec4 colors[4] = { color, color, color, color };
         push_rect_ex(x, y, w, h, radii, colors, 0.0f, rotation, 0.0f);
     }
 
-    void renderer_impl::draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation) {
+    void renderer::draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation) {
         draw_filled_rect(x, y, w, h, glm::vec4(radius), color, rotation);
     }
 
-    void renderer_impl::draw_rect_outline(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float stroke_width, float rotation) {
+    void renderer::draw_rect_outline(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float stroke_width, float rotation) {
         tess.current_texture = nullptr;
         glm::vec4 colors[4] = { color, color, color, color };
         push_rect_ex(x, y, w, h, radii, colors, 0.0f, rotation, stroke_width);
     }
 
-    void renderer_impl::draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation) {
+    void renderer::draw_rect_outline(float x, float y, float w, float h, float radius, glm::vec4 color, float stroke_width, float rotation) {
+        tess.current_texture = nullptr;
+        glm::vec4 colors[4] = { color, color, color, color };
+        push_rect_ex(x, y, w, h, glm::vec4(radius), colors, 0.0f, rotation, stroke_width);
+    }
+
+    void renderer::draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation) {
         tess.current_texture = nullptr;
         glm::vec4 colors[4] = { col_tl, col_tr, col_br, col_bl };
         push_rect_gradient(x, y, w, h, radius, colors, 0.0f, rotation, -1.0f);
     }
 
-    void renderer_impl::draw_image(Resource res, float x, float y, float w, float h, float radius, glm::vec4 tint, float rotation) {
+    void renderer::draw_image(Resource res, float x, float y, float w, float h, float radius, glm::vec4 tint, float rotation) {
         tess.current_texture = get_or_create_texture(res);
         glm::vec4 colors[4] = { tint, tint, tint, tint };
         push_rect_gradient(x, y, w, h, radius, colors, 2.0f, rotation, 0.0f);
     }
 
-    void renderer_impl::draw_gif(Resource res, float x, float y, float w, float h, float radius) {
+    void renderer::draw_gif(Resource res, float x, float y, float w, float h, float radius) {
         auto gif = get_or_create_gif(res);
         if (!gif || gif->total_duration <= 0) return;
 
@@ -265,7 +271,7 @@ namespace selaura {
         push_rect_gradient(x, y, w, h, radius, white, 2.0f, 0.0f, (float)frame);
     }
 
-    void renderer_impl::set_font(Resource tex_res, Resource json_res) {
+    void renderer::set_font(Resource tex_res, Resource json_res) {
         if (font_cache.count(tex_res.begin())) {
             current_font = &font_cache[tex_res.begin()];
             return;
@@ -314,7 +320,7 @@ namespace selaura {
         current_font = &(font_cache[tex_res.begin()] = std::move(font));
     }
 
-    void renderer_impl::draw_text(std::string_view text, float x, float y, float size, glm::vec4 color) {
+    void renderer::draw_text(std::string_view text, float x, float y, float size, glm::vec4 color) {
         if (!current_font) return;
 
         tess.current_texture = current_font->texture.get();
@@ -357,7 +363,7 @@ namespace selaura {
         }
     }
 
-    void renderer_impl::init(ID3D11Device* p_device) {
+    void renderer::init(ID3D11Device* p_device) {
         device.copy_from(p_device);
         device->GetImmediateContext(ctx.put());
 
@@ -410,7 +416,7 @@ namespace selaura {
         device->CreateRasterizerState(&r_desc, raster_state.put());
     }
 
-    void renderer_impl::render_batch(float screen_w, float screen_h) {
+    void renderer::render_batch(float screen_w, float screen_h) {
         if (tess.vertices.empty()) return;
 
         v_buffer.update(device.get(), ctx.get(), tess.vertices);

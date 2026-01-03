@@ -130,8 +130,9 @@ add_library(Selaura SHARED
         memory/hooks/CoreHooks.cpp
         memory/hooks/D3DHooks.cpp
         memory/hooks/InputHooks.cpp
-        core/console.cpp
         core/renderer/sui.cpp
+        core/service/console.cpp
+        core/service/notification_manager.cpp
         ${EMBEDDED_RESOURCES}
 )
 

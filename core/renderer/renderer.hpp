@@ -62,7 +62,7 @@ namespace selaura {
         float px_range;
     };
 
-    class renderer_impl {
+    class renderer {
         tessellator tess;
         render_buffer v_buffer;
         winrt::com_ptr<ID3D11Device> device;
@@ -95,6 +95,7 @@ namespace selaura {
         void draw_filled_rect(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float rotation = 0.0f);
         void draw_filled_rect(float x, float y, float w, float h, float radius, glm::vec4 color, float rotation = 0.0f);
         void draw_rect_outline(float x, float y, float w, float h, glm::vec4 radii, glm::vec4 color, float stroke_width, float rotation = 0.0f);
+        void draw_rect_outline(float x, float y, float w, float h, float radius, glm::vec4 color, float stroke_width, float rotation = 0.0f);
         void draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation = 0.0f);
         void draw_image(Resource res, float x, float y, float w, float h, float radius = 0.0f, glm::vec4 tint = {255, 255, 255, 255}, float rotation = 0.0f);
         void draw_gif(Resource res, float x, float y, float w, float h, float radius = 0.0f);
@@ -102,6 +103,4 @@ namespace selaura {
         void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color);
         void render_batch(float screen_w, float screen_h);
     };
-
-    inline std::unique_ptr<renderer_impl> renderer;
 }

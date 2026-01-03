@@ -2,7 +2,7 @@
 #include <pch.hpp>
 
 namespace selaura {
-    struct event_manager_impl {
+    struct event_manager {
         struct listener_entry {
             void* addr;
             std::function<void(selaura::event&)> callback;
@@ -10,7 +10,7 @@ namespace selaura {
 
         using ListenerMap = std::map<std::type_index, std::vector<listener_entry>>;
 
-        event_manager_impl() {
+        event_manager() {
             data.store(std::make_shared<ListenerMap>());
         }
 
@@ -75,6 +75,4 @@ namespace selaura {
     private:
         std::atomic<std::shared_ptr<ListenerMap>> data;
     };
-
-    inline std::unique_ptr<event_manager_impl> event_manager;
 };

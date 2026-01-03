@@ -1,6 +1,6 @@
 #include "console.hpp"
 
-void selaura::console_impl::render() {
+void selaura::console::render() {
     ImGui::SetNextWindowSize(ImVec2(500.0f, 200.0f), ImGuiCond_Once);
     if (!ImGui::Begin("Console", nullptr, ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
         ImGui::End();
@@ -46,12 +46,12 @@ void selaura::console_impl::render() {
     ImGui::End();
 }
 
-void selaura::console_impl::push_text(const std::string& text, const ImVec4& color) {
+void selaura::console::push_text(const std::string& text, const ImVec4& color) {
     std::lock_guard<std::mutex> lock(message_mutex);
     this->message_history.push_back({ text, color });
 }
 
-void selaura::console_impl::shutdown() {
+void selaura::console::shutdown() {
     std::lock_guard<std::mutex> lock(message_mutex);
     message_history.clear();
     cmd_history.clear();

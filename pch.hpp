@@ -74,7 +74,9 @@
 #include <core/event/event.hpp>
 #include <core/event/event_manager.hpp>
 
-#include <core/renderer/renderer.hpp>
+#include <core/service_manager.hpp>
+#include <core/service/console_sink.hpp>
+
 #include <core/renderer/sui.hpp>
 
 #include <sdk/core/SubClientId.hpp>
@@ -91,9 +93,6 @@
 #include <sdk/renderer/ScreenView.hpp>
 
 #include <sdk/world/Dimension.hpp>
-
-#include <core/console.hpp>
-#include <core/console_sink.hpp>
 
 #define OFFSET_ACCESSOR(Type, Name, Offset)                  \
 inline Type $##Name() {                                         \
