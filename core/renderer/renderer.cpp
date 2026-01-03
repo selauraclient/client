@@ -363,6 +363,43 @@ namespace selaura {
         }
     }
 
+    glm::vec2 renderer::get_text_size(std::string_view text, float size) {
+        if (!current_font || text.empty()) return { 0.0f, 0.0f };
+
+        float width = 0.0f;
+        float min_y = 0.0f;
+        float max_y = 0.0f;
+
+        for (size_t i = 0; i < text.length(); ) {
+            uint32_t c = (unsigned char)text[i++];
+
+            if (c >= 0x80) {
+                if ((c & 0xE0) == 0xC0 && i < text.length()) {
+                    c = ((c & 0x1F) << 6) | ((unsigned char)text[i++] & 0x3F);
+                } else if ((c & 0xF0) == 0xE0 && i + 1 < text.length()) {
+                    c = ((c & 0x0F) << 12) | (((unsigned char)text[i++] & 0x3F) << 6);
+                    c |= ((unsigned char)text[i++] & 0x3F);
+                } else if ((c & 0xF8) == 0xF0 && i + 2 < text.length()) {
+                    c = ((c & 0x07) << 18) | (((unsigned char)text[i++] & 0x3F) << 12);
+                    c |= (((unsigned char)text[i++] & 0x3F) << 6);
+                    c |= ((unsigned char)text[i++] & 0x3F);
+                }
+            }
+
+            auto it = current_font->glyphs.find(c);
+            if (it == current_font->glyphs.end()) continue;
+
+            const auto& g = it->second;
+
+            min_y = std::min(min_y, g.y0 * size);
+            max_y = std::max(max_y, g.y1 * size);
+
+            width += g.advance * size;
+        }
+
+        return glm::vec2(width, max_y - min_y);
+    }
+
     void renderer::init(ID3D11Device* p_device) {
         device.copy_from(p_device);
         device->GetImmediateContext(ctx.put());

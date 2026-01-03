@@ -101,6 +101,7 @@ namespace selaura {
         void draw_gif(Resource res, float x, float y, float w, float h, float radius = 0.0f);
         void set_font(Resource tex_res, Resource json_res);
         void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color);
+        glm::vec2 get_text_size(std::string_view text, float size);
         void render_batch(float screen_w, float screen_h);
     };
 }

@@ -12,5 +12,6 @@ namespace selaura {
         IDXGISwapChain* swapChain;
         float screenWidth;
         float screenHeight;
+        float fps;
     };
 };

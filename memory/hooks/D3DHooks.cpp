@@ -169,10 +169,28 @@ struct selaura::detour<&IDXGISwapChain::Present> {
             GET_RESOURCE(Poppins_msdf_json)
         );
 
+        static auto last_time = std::chrono::high_resolution_clock::now();
+        static float fps = 0.0f;
+        static int frame_count = 0;
+        static float accumulator = 0.0f;
+
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float delta_time = std::chrono::duration<float>(current_time - last_time).count();
+        last_time = current_time;
+
+        accumulator += delta_time;
+        frame_count++;
+        if (accumulator >= 0.5f) {
+            fps = static_cast<float>(frame_count) / accumulator;
+            accumulator = 0.0f;
+            frame_count = 0;
+        }
+
         selaura::render_event ev{};
         ev.swapChain = thisptr;
         ev.screenWidth = desc.BufferDesc.Width;
         ev.screenHeight = desc.BufferDesc.Height;
+        ev.fps = fps;
         selaura::get<selaura::event_manager>().dispatch(ev);
 
         renderer.render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
@@ -187,7 +205,8 @@ struct selaura::detour<&IDXGISwapChain::Present> {
 
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+        //return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+        return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, 0, Flags);
     }
 };
 

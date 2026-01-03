@@ -34,6 +34,24 @@ void drawMenu(selaura::render_event& ev) {
     sui::text(menu_x + 55, menu_y + 38, 24, "selaura");
 }
 
+void drawFps(selaura::render_event& ev) {
+    auto& renderer = selaura::get<selaura::renderer>();
+    std::string text = fmt::format("{:.0f} FPS", ev.fps);
+
+    auto fps_text = renderer.get_text_size(text, 24);
+    auto fps_padding = glm::vec2{35, 20};
+    auto fps_size = fps_text + fps_padding;
+
+    float rect_x = 20.0f;
+    float rect_y = 20.0f;
+
+    float text_x = rect_x + (fps_size.x / 2.0f) - (fps_text.x / 2.0f);
+    float text_y = rect_y + (fps_size.y * 0.5f) + (fps_text.y * 0.5f);
+
+    renderer.draw_filled_rect(rect_x, rect_y, fps_size.x, fps_size.y, 5.0f, {24, 24, 24, 255});
+    renderer.draw_text(text, text_x, text_y, 24, {255, 255, 255, 255});
+}
+
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
     selaura::service_manager = std::make_unique<selaura::service_manager_impl>();
@@ -58,7 +76,8 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
 
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
 
-    selaura::get<selaura::event_manager>().subscribe(&drawMenu);
+    //selaura::get<selaura::event_manager>().subscribe(&drawMenu);
+    selaura::get<selaura::event_manager>().subscribe(&drawFps);
 
     const int target_ms = 5000;
     const int interval_ms = 100;
