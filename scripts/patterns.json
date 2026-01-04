@@ -16,8 +16,20 @@
 		"signature": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? 48 81 EC ? ? ? ? 0F 29 BC 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 8B FA"
 	},
 	{
-		"symbol": "?submit@RenderContextD3D11@d3d11@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z",
+		"symbol": "?submit@RendererContextD3D11@d3d11@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z",
 		"signature": "48 8B C4 55 53 56 57 41 54 41 55 41 56 41 57 48 81 EC ? ? ? ? 0F 29 70 ? 0F 29 78 ? 44 0F 29 40 ? 44 0F 29 88 ? ? ? ? 48 8D A8"
+	},
+	{
+		"symbol": "?submit@RendererContextD3D12@d3d12@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z",
+		"signature": "48 89 5C 24 ? 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ? ? ? ? B8 ? ? ? ? E8 ? ? ? ? 48 2B E0 0F 29 B4 24 ? ? ? ? 0F 29 BC 24 ? ? ? ? 44 0F 29 84 24 ? ? ? ? 48 8B 05 ? ? ? ? 48 33 C4 48 89 85 ? ? ? ? 4C 89 4C 24"
+	},
+	{
+		"symbol": "?isDeviceRemoved@RendererContextD3D11@d3d11@bgfx@@QEAA_NXZ",
+		"signature": "83 B9 ? ? ? ? ? 0F 94 C0 C3 CC CC CC CC CC 40 53 48 83 EC ? 48 8B 05"
+	},
+	{
+		"symbol": "?isDeviceRemoved@RendererContextD3D12@d3d12@bgfx@@QEAA_NXZ",
+		"signature": "83 B9 ? ? ? ? ? 0F 94 C0 C3 CC CC CC CC CC B2"
 	},
 	{
 		"symbol": "?_update@MinecraftGame@@QEAAXXZ",

@@ -13,6 +13,7 @@
 
 #include <d3d11.h>
 #include <d3d12.h>
+#include <d3d11on12.h>
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
 
@@ -93,11 +94,3 @@
 #include <sdk/renderer/ScreenView.hpp>
 
 #include <sdk/world/Dimension.hpp>
-
-#define OFFSET_ACCESSOR(Type, Name, Offset)                  \
-inline Type $##Name() {                                         \
-return hat::member_at<Type>(this, Offset);           \
-}                                                        \
-inline Type $##Name() const {                                   \
-return hat::member_at<Type>(this, Offset);           \
-}

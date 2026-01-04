@@ -5,8 +5,15 @@ static winrt::com_ptr<ID3D11DeviceContext> device_ctx;
 static winrt::com_ptr<ID3D11Texture2D> back_buffer;
 static winrt::com_ptr<ID3D11RenderTargetView> main_rtv;
 
+static winrt::com_ptr<ID3D11On12Device> d3d11on12_device;
+static ID3D12CommandQueue* d3d12_queue = nullptr;
+static winrt::com_ptr<ID3D11Resource> wrapped_back_buffer;
+
 static WNDPROC wnd_proc = nullptr;
+static bool is_d3d12 = false;
 static bool d3d_init = false;
+static bool imgui_init = false;
+static bool hooks_init = false;
 
 LOAD_RESOURCE(Poppins_msdf_png)
 LOAD_RESOURCE(Poppins_msdf_json)
@@ -14,22 +21,59 @@ LOAD_RESOURCE(Poppins_msdf_json)
 LOAD_RESOURCE(FontAwesome_msdf_png)
 LOAD_RESOURCE(FontAwesome_msdf_json)
 
+inline void reset_all_d3d_state() {
+    main_rtv = nullptr;
+    back_buffer = nullptr;
+    wrapped_back_buffer = nullptr;
+    d3d11on12_device = nullptr;
+    d3d12_queue = nullptr;
+    device_ctx = nullptr;
+    device = nullptr;
+
+    d3d_init = false;
+    imgui_init = false;
+    is_d3d12 = false;
+}
 template <>
 struct selaura::detour<&IDXGISwapChain::Present> {
     static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {
-        static bool imgui_init = false;
         if (!d3d_init) {
-            if (!imgui_init) {
-                thisptr->GetDevice(__uuidof(device), device.put_void());
+            winrt::com_ptr<ID3D12Device> d3d12_dev;
+            HRESULT hr = thisptr->GetDevice(__uuidof(ID3D12Device), d3d12_dev.put_void());
+
+            if (SUCCEEDED(hr)) {
+                is_d3d12 = true;
+
+                if (!d3d12_queue) return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+
+                hr = D3D11On12CreateDevice(
+                    d3d12_dev.get(), D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+                    nullptr, 0, reinterpret_cast<IUnknown**>(&d3d12_queue), 1,
+                    0, device.put(), device_ctx.put(), nullptr
+                );
+
+                if (FAILED(hr)) return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+
+                device->QueryInterface(d3d11on12_device.put());
+            } else {
+                is_d3d12 = false;
+                if (FAILED(thisptr->GetDevice(__uuidof(ID3D11Device), device.put_void()))) return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+
                 device->GetImmediateContext(device_ctx.put());
 
-                ImGui::CreateContext();
+                winrt::com_ptr<ID3D11Texture2D> pBackBuffer;
+                thisptr->GetBuffer(0, IID_PPV_ARGS(pBackBuffer.put()));
+                device->CreateRenderTargetView(pBackBuffer.get(), nullptr, main_rtv.put());
+            }
 
+            if (!imgui_init && device) {
+                ImGui::CreateContext();
                 DXGI_SWAP_CHAIN_DESC desc{};
                 thisptr->GetDesc(&desc);
-                ImGui_ImplWin32_Init(desc.OutputWindow);
 
+                ImGui_ImplWin32_Init(desc.OutputWindow);
                 ImGui_ImplDX11_Init(device.get(), device_ctx.get());
+
                 {
                     ImGuiStyle& style = ImGui::GetStyle();
                     ImVec4* colors = style.Colors;
@@ -139,74 +183,104 @@ struct selaura::detour<&IDXGISwapChain::Present> {
                     style.FrameBorderSize   = 0.0f;
                     style.TabBorderSize     = 0.0f;
                 }
+
                 imgui_init = true;
             }
-
-            if (SUCCEEDED(thisptr->GetBuffer(0, __uuidof(ID3D11Texture2D), back_buffer.put_void()))) {
-                device->CreateRenderTargetView(back_buffer.get(), NULL, main_rtv.put());
-            }
-
             d3d_init = true;
         }
 
-        if (!main_rtv) return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+        if (is_d3d12 && d3d11on12_device) {
+            winrt::com_ptr<ID3D12Resource> d3d12_bb;
 
-        ID3D11RenderTargetView* rtv_ptr = main_rtv.get();
-        device_ctx->OMSetRenderTargets(1, &rtv_ptr, NULL);
+            UINT backBufferIdx = ((IDXGISwapChain3*)thisptr)->GetCurrentBackBufferIndex();
+            HRESULT hr = thisptr->GetBuffer(backBufferIdx, IID_PPV_ARGS(d3d12_bb.put()));
 
-        static bool renderer_init = false;
-        auto& renderer = selaura::get<selaura::renderer>();
-        if (!renderer_init) {
-            renderer.init(device.get());
-            renderer_init = true;
+            if (FAILED(hr)) {
+                thisptr->GetBuffer(0, IID_PPV_ARGS(d3d12_bb.put()));
+            }
+
+            D3D11_RESOURCE_FLAGS rf = { D3D11_BIND_RENDER_TARGET };
+
+            hr = d3d11on12_device->CreateWrappedResource(
+                d3d12_bb.get(), &rf,
+                D3D12_RESOURCE_STATE_PRESENT,
+                D3D12_RESOURCE_STATE_PRESENT,
+                IID_PPV_ARGS(wrapped_back_buffer.put())
+            );
+
+            if (SUCCEEDED(hr)) {
+                auto resource_ptr = wrapped_back_buffer.get();
+                d3d11on12_device->AcquireWrappedResources(&resource_ptr, 1);
+                device->CreateRenderTargetView(wrapped_back_buffer.get(), nullptr, main_rtv.put());
+            }
         }
 
-        DXGI_SWAP_CHAIN_DESC desc;
-        thisptr->GetDesc(&desc);
+        if (main_rtv) {
+            ID3D11RenderTargetView* rtv_ptr = main_rtv.get();
+            device_ctx->OMSetRenderTargets(1, &rtv_ptr, nullptr);
 
-        renderer.set_font(
-            GET_RESOURCE(Poppins_msdf_png),
-            GET_RESOURCE(Poppins_msdf_json)
-        );
+            DXGI_SWAP_CHAIN_DESC desc;
+            thisptr->GetDesc(&desc);
 
-        static auto last_time = std::chrono::high_resolution_clock::now();
-        static float fps = 0.0f;
-        static int frame_count = 0;
-        static float accumulator = 0.0f;
+            static bool renderer_init = false;
+            auto& renderer = selaura::get<selaura::renderer>();
 
-        auto current_time = std::chrono::high_resolution_clock::now();
-        float delta_time = std::chrono::duration<float>(current_time - last_time).count();
-        last_time = current_time;
+            if (!renderer_init) {
+                renderer.init(device.get());
+                renderer_init = true;
+            }
 
-        accumulator += delta_time;
-        frame_count++;
-        if (accumulator >= 0.5f) {
-            fps = static_cast<float>(frame_count) / accumulator;
-            accumulator = 0.0f;
-            frame_count = 0;
+            renderer.set_font(
+                GET_RESOURCE(Poppins_msdf_png),
+                GET_RESOURCE(Poppins_msdf_json)
+            );
+
+            static auto last_time = std::chrono::high_resolution_clock::now();
+            static float fps = 0.0f;
+            static int frame_count = 0;
+            static float accumulator = 0.0f;
+
+            auto current_time = std::chrono::high_resolution_clock::now();
+            float delta_time = std::chrono::duration<float>(current_time - last_time).count();
+            last_time = current_time;
+            accumulator += delta_time;
+            frame_count++;
+
+            if (accumulator >= 0.5f) {
+                fps = static_cast<float>(frame_count) / accumulator;
+                accumulator = 0.0f;
+                frame_count = 0;
+            }
+
+            selaura::render_event ev{};
+
+            ev.swapChain = thisptr;
+            ev.screenWidth = desc.BufferDesc.Width;
+            ev.screenHeight = desc.BufferDesc.Height;
+            ev.fps = fps;
+
+            selaura::get<selaura::event_manager>().dispatch(ev);
+            renderer.render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
+
+            ImGui_ImplDX11_NewFrame();
+            ImGui_ImplWin32_NewFrame();
+            ImGui::NewFrame();
+
+            selaura::get<console>().render();
+
+            ImGui::Render();
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         }
 
-        selaura::render_event ev{};
-        ev.swapChain = thisptr;
-        ev.screenWidth = desc.BufferDesc.Width;
-        ev.screenHeight = desc.BufferDesc.Height;
-        ev.fps = fps;
-        selaura::get<selaura::event_manager>().dispatch(ev);
+        if (is_d3d12 && d3d11on12_device && wrapped_back_buffer) {
+            main_rtv = nullptr;
+            auto resource_ptr = wrapped_back_buffer.get();
+            d3d11on12_device->ReleaseWrappedResources(&resource_ptr, 1);
+            wrapped_back_buffer = nullptr;
+            device_ctx->Flush();
+        }
 
-        renderer.render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
-
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        selaura::get<console>().render();
-
-        ImGui::Render();
-
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-        //return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
-        return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, 0, Flags);
+        return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
     }
 };
 
@@ -230,15 +304,50 @@ struct selaura::detour<&IDXGISwapChain::ResizeBuffers> {
 };
 
 template<>
-struct selaura::detour<&bgfx::d3d11::RenderContextD3D11::submit> {
-    static void hk(bgfx::d3d11::RenderContextD3D11* thisptr, void* a1, void* a2, void* a3) {
-        selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::call(thisptr, a1, a2, a3);
+struct selaura::detour<&ID3D12CommandQueue::ExecuteCommandLists> {
+    static void hk(ID3D12CommandQueue* thisptr, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
+        if (!d3d12_queue) d3d12_queue = thisptr;
+        return selaura::hook<&ID3D12CommandQueue::ExecuteCommandLists>::call(thisptr, NumCommandLists, ppCommandLists);
+    }
+};
 
-        static bool once = false;
-        if (!once) {
+template<>
+struct selaura::detour<&bgfx::d3d11::RendererContextD3D11::submit> {
+    static void hk(bgfx::d3d11::RendererContextD3D11* thisptr, void* a1, void* a2, void* a3) {
+        selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::call(thisptr, a1, a2, a3);
+
+        if (!hooks_init) {
             selaura::hook<&IDXGISwapChain::Present>::enable(thisptr->$getSwapChain());
             selaura::hook<&IDXGISwapChain::ResizeBuffers>::enable(thisptr->$getSwapChain());
-            once = true;
+            hooks_init = true;
+        }
+    }
+};
+
+template<>
+struct selaura::detour<&bgfx::d3d12::RendererContextD3D12::submit> {
+    static void hk(bgfx::d3d12::RendererContextD3D12* thisptr, void* a1, void* a2, void* a3) {
+        selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::call(thisptr, a1, a2, a3);
+
+        if (!hooks_init) {
+            auto swapChain = thisptr->$getSwapChain();
+
+            winrt::com_ptr<ID3D12Device> temp_device;
+            swapChain->GetDevice(IID_PPV_ARGS(temp_device.put()));
+
+            D3D12_COMMAND_QUEUE_DESC desc = {};
+            desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+            desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+            desc.NodeMask = 1;
+
+            winrt::com_ptr<ID3D12CommandQueue> dummy_queue;
+            temp_device->CreateCommandQueue(&desc, IID_PPV_ARGS(dummy_queue.put()));
+
+            selaura::hook<&ID3D12CommandQueue::ExecuteCommandLists>::enable(dummy_queue.get());
+            selaura::hook<&IDXGISwapChain::Present>::enable(swapChain);
+            selaura::hook<&IDXGISwapChain::ResizeBuffers>::enable(swapChain);
+
+            hooks_init = true;
         }
     }
 };

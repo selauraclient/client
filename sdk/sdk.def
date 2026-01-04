@@ -4,5 +4,8 @@ EXPORTS
     ?getTimeOfDay@Dimension@@QEAAMHM@Z @2 NONAME
     ?renderLevel@LevelRenderer@@QEAAXAEAVScreenContext@@AEBVFrameRenderObject@@@Z @3 NONAME
     ?render@ScreenView@@QEAAXAEAVUIRenderContext@@@Z @4 NONAME
-    ?submit@RenderContextD3D11@d3d11@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z @5 NONAME
-    ?_update@MinecraftGame@@QEAAXXZ @6 NONAME
+    ?submit@RendererContextD3D11@d3d11@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z @5 NONAME
+    ?submit@RendererContextD3D12@d3d12@bgfx@@QEAAXPEAVFrame@@AEAVClearQuad@@AEAVTextVideoMemBlitter@@@Z @6 NONAME
+    ?isDeviceRemoved@RendererContextD3D11@d3d11@bgfx@@QEAA_NXZ @7 NONAME
+    ?isDeviceRemoved@RendererContextD3D12@d3d12@bgfx@@QEAA_NXZ @8 NONAME
+    ?_update@MinecraftGame@@QEAAXXZ @9 NONAME

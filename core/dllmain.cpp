@@ -54,6 +54,36 @@ void drawFps(selaura::render_event& ev) {
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
+
+    if (auto address = selaura::pattern<"81 BF ?? ?? 00 00 86 80 00 00">::resolve(); address) {
+        DWORD oldProtect;
+        // Cast uintptr_t to LPVOID (void*) for the API
+        void* ptr = reinterpret_cast<void*>(address);
+        // Cast to uint8_t* to ensure index [6] and [7] are byte-offsets
+        uint8_t* code = reinterpret_cast<uint8_t*>(address);
+
+        if (VirtualProtect(ptr, 10, PAGE_READWRITE, &oldProtect)) {
+            code[6] = 0;
+            code[7] = 0;
+
+            VirtualProtect(ptr, 10, oldProtect, &oldProtect);
+            FlushInstructionCache(GetCurrentProcess(), ptr, 10);
+        }
+    } else if (address = selaura::pattern<"81 BE ?? ?? 00 00 86 80 00 00">::resolve(); address) {
+        DWORD oldProtect;
+        void* ptr = reinterpret_cast<void*>(address);
+        uint8_t* code = reinterpret_cast<uint8_t*>(address);
+
+        if (VirtualProtect(ptr, 10, PAGE_READWRITE, &oldProtect)) {
+            code[6] = 0;
+            code[7] = 0;
+
+            VirtualProtect(ptr, 10, oldProtect, &oldProtect);
+            FlushInstructionCache(GetCurrentProcess(), ptr, 10);
+        }
+    } else {
+        spdlog::error("Failed to patch bgfx::d3d12::RendererContextD3D12::init");
+    }
     selaura::service_manager = std::make_unique<selaura::service_manager_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
 
@@ -70,10 +100,10 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
 
     spdlog::stopwatch hook_timer;
     selaura::hook<&MinecraftGame::_update>::enable();
-    selaura::hook<&bgfx::d3d11::RenderContextD3D11::submit>::enable();
+    selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::enable();
+    selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::enable();
     selaura::init_wndproc(FindWindowA("Bedrock", nullptr));
     spdlog::debug("Hooks created in {:.0f}ms", hook_timer.elapsed().count() * 1000);
-
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
 
     //selaura::get<selaura::event_manager>().subscribe(&drawMenu);
