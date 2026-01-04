@@ -54,36 +54,6 @@ void drawFps(selaura::render_event& ev) {
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
-
-    if (auto address = selaura::pattern<"81 BF ?? ?? 00 00 86 80 00 00">::resolve(); address) {
-        DWORD oldProtect;
-        // Cast uintptr_t to LPVOID (void*) for the API
-        void* ptr = reinterpret_cast<void*>(address);
-        // Cast to uint8_t* to ensure index [6] and [7] are byte-offsets
-        uint8_t* code = reinterpret_cast<uint8_t*>(address);
-
-        if (VirtualProtect(ptr, 10, PAGE_READWRITE, &oldProtect)) {
-            code[6] = 0;
-            code[7] = 0;
-
-            VirtualProtect(ptr, 10, oldProtect, &oldProtect);
-            FlushInstructionCache(GetCurrentProcess(), ptr, 10);
-        }
-    } else if (address = selaura::pattern<"81 BE ?? ?? 00 00 86 80 00 00">::resolve(); address) {
-        DWORD oldProtect;
-        void* ptr = reinterpret_cast<void*>(address);
-        uint8_t* code = reinterpret_cast<uint8_t*>(address);
-
-        if (VirtualProtect(ptr, 10, PAGE_READWRITE, &oldProtect)) {
-            code[6] = 0;
-            code[7] = 0;
-
-            VirtualProtect(ptr, 10, oldProtect, &oldProtect);
-            FlushInstructionCache(GetCurrentProcess(), ptr, 10);
-        }
-    } else {
-        spdlog::error("Failed to patch bgfx::d3d12::RendererContextD3D12::init");
-    }
     selaura::service_manager = std::make_unique<selaura::service_manager_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
 
