@@ -1,13 +1,16 @@
 #pragma once
+
 #define CLIENT_VERSION "0.10"
 #define MCAPI __declspec(dllimport)
 #define SELAURA_EXPORT extern "C" __declspec(dllexport)
 
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 #include <dwmapi.h>
 #include <Psapi.h>
 #include <shlobj_core.h>
-#include <Windows.h>
 #include <GameInput.h>
 #include <winrt/base.h>
 
@@ -17,7 +20,7 @@
 #include <dxgi1_4.h>
 #include <d3dcompiler.h>
 
-
+// STL
 #include <atomic>
 #include <bit>
 #include <exception>
@@ -33,64 +36,17 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
-
-#include <safetyhook.hpp>
-
 #include <glm/glm.hpp>
-
-#include <entt/entt.hpp>
-#include <entt/core/type_info.hpp>
-
 #include <fmt/base.h>
 #include <fmt/format.h>
-
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/base_sink-inl.h>
-#include <spdlog/sinks/stdout_color_sinks-inl.h>
-#include <spdlog/stopwatch.h>
-
 #include <libhat/access.hpp>
 #include <libhat/signature.hpp>
 #include <libhat/scanner.hpp>
 #include <libhat/memory_protector.hpp>
 #include <libhat/process.hpp>
-
-#define IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEBUG_PARANOID
-#include <imgui.h>
-#include <backends/imgui_impl_dx11.h>
-#include <backends/imgui_impl_dx12.h>
-#include <backends/imgui_impl_win32.h>
-
-#include <memory/cleanup.hpp>
-#include <memory/memory.hpp>
-#include <memory/patterns.hpp>
-#include <memory/delayloader/delayloader.hpp>
-
-#include <memory/detour.hpp>
-#include <memory/hook.hpp>
+#include <safetyhook.hpp>
+#include <spdlog/spdlog.h>
+#include <spdlog/stopwatch.h>
+#include <spdlog/sinks/sink.h>
 
 #include <core/resource.hpp>
-
-#include <core/event/event.hpp>
-#include <core/event/event_manager.hpp>
-
-#include <core/service_manager.hpp>
-#include <core/service/console_sink.hpp>
-
-#include <core/renderer/sui.hpp>
-
-#include <sdk/core/SubClientId.hpp>
-#include <sdk/core/ClientInstance.hpp>
-#include <sdk/core/MinecraftGame.hpp>
-
-#include <sdk/network/IPacketHandlerDispatcher.hpp>
-#include <sdk/network/Packet.hpp>
-#include <sdk/network/MinecraftPackets.hpp>
-#include <sdk/network/PacketHandlerDispatcher.hpp>
-
-#include <sdk/renderer/bgfx.hpp>
-#include <sdk/renderer/LevelRenderer.hpp>
-#include <sdk/renderer/ScreenView.hpp>
-
-#include <sdk/world/Dimension.hpp>

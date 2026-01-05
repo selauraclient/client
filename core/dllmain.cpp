@@ -1,9 +1,17 @@
 #include <pch.hpp>
-#include <memory/patterns/resolver.hpp>
 
+#include <core/service_manager.hpp>
+#include <core/renderer/sui.hpp>
+#include <core/service/console_sink.hpp>
+#include <memory/cleanup.hpp>
+#include <memory/hook.hpp>
+#include <memory/delayloader/delayloader.hpp>
 #include <memory/hooks/CoreHooks.cpp>
 #include <memory/hooks/D3DHooks.cpp>
 #include <memory/hooks/InputHooks.cpp>
+#include <memory/patterns/resolver.hpp>
+#include <sdk/core/MinecraftGame.hpp>
+#include <sdk/renderer/bgfx.hpp>
 
 void EjectAndExit(HMODULE hModule) {
     spdlog::info("Ejecting Selaura...");
@@ -56,8 +64,11 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::stopwatch inject_timer;
     selaura::service_manager = std::make_unique<selaura::service_manager_impl>();
     auto sink = std::make_shared<selaura::console_sink>();
+    auto logger = std::make_shared<spdlog::logger>(
+        "Selaura",
+        sink
+    );
 
-    auto logger = std::make_shared<spdlog::logger>("Selaura", sink);
     logger->set_pattern("[%H:%M:%S] [%l] %v");
 
     spdlog::set_default_logger(logger);

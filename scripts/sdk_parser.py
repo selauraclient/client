@@ -57,6 +57,7 @@ def main():
     cpp_lines = [
         "#pragma once",
         "#include <pch.hpp>",
+        "#include <memory/patterns.hpp>",
         "",
         "// Auto-generated function",
         "inline auto fakeImportResolver = +[](std::uint64_t ordinal) -> std::uintptr_t {",

@@ -1,6 +1,12 @@
 #include "renderer.hpp"
 #include "shaders.hpp"
 
+#if defined(__clang__) && defined(_MSC_VER)
+    #ifdef __cpuid
+        #undef __cpuid
+    #endif
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 

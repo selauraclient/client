@@ -1,5 +1,15 @@
 #include <pch.hpp>
 
+#include <imgui.h>
+#include <backends/imgui_impl_dx11.h>
+#include <backends/imgui_impl_win32.h>
+
+#include <core/service_manager.hpp>
+#include <memory/detour.hpp>
+#include <memory/hook.hpp>
+
+#include <sdk/renderer/bgfx.hpp>
+
 static winrt::com_ptr<ID3D11Device> device;
 static winrt::com_ptr<ID3D11DeviceContext> device_ctx;
 static winrt::com_ptr<ID3D11Texture2D> back_buffer;
@@ -21,19 +31,6 @@ LOAD_RESOURCE(Poppins_msdf_json)
 LOAD_RESOURCE(FontAwesome_msdf_png)
 LOAD_RESOURCE(FontAwesome_msdf_json)
 
-inline void reset_all_d3d_state() {
-    main_rtv = nullptr;
-    back_buffer = nullptr;
-    wrapped_back_buffer = nullptr;
-    d3d11on12_device = nullptr;
-    d3d12_queue = nullptr;
-    device_ctx = nullptr;
-    device = nullptr;
-
-    d3d_init = false;
-    imgui_init = false;
-    is_d3d12 = false;
-}
 template <>
 struct selaura::detour<&IDXGISwapChain::Present> {
     static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {

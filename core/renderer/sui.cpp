@@ -1,4 +1,6 @@
 #include "sui.hpp"
+#include <core/service_manager.hpp>
+
 using namespace selaura;
 
 LOAD_RESOURCE(selaura_icon_png)

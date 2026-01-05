@@ -1,5 +1,9 @@
 #pragma once
 #include <pch.hpp>
+#include <memory/cleanup.hpp>
+#include <memory/detour.hpp>
+#include <memory/hook.hpp>
+#include <memory/memory.hpp>
 
 namespace selaura {
 

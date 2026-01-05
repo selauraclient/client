@@ -1,6 +1,7 @@
 #pragma once
 #include <pch.hpp>
 
+#include <core/event/event_manager.hpp>
 #include <core/service/console.hpp>
 #include <core/service/notification_manager.hpp>
 #include <core/renderer/renderer.hpp>

@@ -1,5 +1,6 @@
 #pragma once
 #include <pch.hpp>
+#include <imgui.h>
 
 namespace selaura {
     struct log_message {

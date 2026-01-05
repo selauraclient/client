@@ -1,5 +1,6 @@
 #pragma once
 #include <pch.hpp>
+#include <core/event/event.hpp>
 
 namespace selaura {
     struct event_manager {
