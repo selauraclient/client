@@ -6,12 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(Selaura_Loader
-        main.cpp
+    main.cpp
 )
 
 target_link_libraries(Selaura_Loader
-        PRIVATE
-        shell32
+    PRIVATE
+    shell32
 )
 
 if (MSVC)

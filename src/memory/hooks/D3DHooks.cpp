@@ -28,6 +28,10 @@ static bool hooks_init = false;
 LOAD_RESOURCE(Poppins_msdf_png)
 LOAD_RESOURCE(Poppins_msdf_json)
 
+LOAD_RESOURCE(Minecraft_msdf_png)
+LOAD_RESOURCE(Minecraft_msdf_json)
+
+
 LOAD_RESOURCE(FontAwesome_msdf_png)
 LOAD_RESOURCE(FontAwesome_msdf_json)
 

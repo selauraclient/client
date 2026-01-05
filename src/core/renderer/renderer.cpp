@@ -277,7 +277,7 @@ namespace selaura {
         push_rect_gradient(x, y, w, h, radius, white, 2.0f, 0.0f, (float)frame);
     }
 
-    void renderer::set_font(Resource tex_res, Resource json_res) {
+    void renderer::set_font(Resource tex_res, Resource json_res, bool aliased) {
         if (font_cache.count(tex_res.begin())) {
             current_font = &font_cache[tex_res.begin()];
             return;
@@ -304,6 +304,7 @@ namespace selaura {
 
         auto j = nlohmann::json::parse(std::string_view((char*)json_res.data(), json_res.size()));
         font.px_range = j["atlas"]["distanceRange"];
+        font.prefers_aliased = aliased;
 
         for (auto& g : j["glyphs"]) {
             glyph& gl = font.glyphs[g["unicode"]];
@@ -326,12 +327,17 @@ namespace selaura {
         current_font = &(font_cache[tex_res.begin()] = std::move(font));
     }
 
-    void renderer::draw_text(std::string_view text, float x, float y, float size, glm::vec4 color) {
+    void renderer::draw_text(std::string_view text, float x, float y, float size, glm::vec4 color, int aliased) {
         if (!current_font) return;
 
         tess.current_texture = current_font->texture.get();
-        float cur_x = x;
+
+        bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
+        float cur_x = use_aliased ? std::floor(x + 0.5f) : x;
+        float cur_y = use_aliased ? std::floor(y + 0.5f) : y;
+
         glm::vec4 cols[4] = { color, color, color, color };
+        float aa_flag = use_aliased ? 1.0f : 0.0f;
 
         for (size_t i = 0; i < text.length(); ) {
             uint32_t c = (unsigned char)text[i++];
@@ -352,12 +358,22 @@ namespace selaura {
             if (!current_font->glyphs.count(c)) continue;
             const auto& g = current_font->glyphs.at(c);
 
-            float gx = cur_x + g.x0 * size;
-            float gy = y - g.y1 * size;
-            float gw = (g.x1 - g.x0) * size;
-            float gh = (g.y1 - g.y0) * size;
+            float effective_size = use_aliased ? std::round(size) : size;
+            float gx = cur_x + g.x0 * effective_size;
+            float gy = cur_y - g.y1 * effective_size;
+            float gw = (g.x1 - g.x0) * effective_size;
+            float gh = (g.y1 - g.y0) * effective_size;
 
-            push_rect_gradient(gx, gy, gw, gh, 0.0f, cols, 3.0f, 0.0f, 0.0f);
+            if (use_aliased) {
+                float snapped_gx = std::floor(gx + 0.5f);
+                float snapped_gy = std::floor(gy + 0.5f);
+                gw = std::floor(gx + gw + 0.5f) - snapped_gx;
+                gh = std::floor(gy + gh + 0.5f) - snapped_gy;
+                gx = snapped_gx;
+                gy = snapped_gy;
+            }
+
+            push_rect_gradient(gx, gy, gw, gh, 0.0f, cols, 3.0f, 0.0f, aa_flag);
 
             auto& v = tess.vertices;
             size_t v_idx = v.size() - 6;
@@ -365,12 +381,20 @@ namespace selaura {
             v[v_idx+0].uv = {g.u0, g.v0}; v[v_idx+1].uv = {g.u1, g.v0}; v[v_idx+2].uv = {g.u0, g.v1};
             v[v_idx+3].uv = {g.u1, g.v0}; v[v_idx+4].uv = {g.u1, g.v1}; v[v_idx+5].uv = {g.u0, g.v1};
 
-            cur_x += g.advance * size;
+            float advance = g.advance * size;
+            if (use_aliased) {
+                cur_x += std::floor(advance + 0.5f);
+            } else {
+                cur_x += advance;
+            }
         }
     }
 
     glm::vec2 renderer::get_text_size(std::string_view text, float size) {
         if (!current_font || text.empty()) return { 0.0f, 0.0f };
+
+        bool use_aliased = current_font->prefers_aliased;
+        float effective_size = use_aliased ? std::round(size) : size;
 
         float width = 0.0f;
         float min_y = 0.0f;
@@ -397,10 +421,15 @@ namespace selaura {
 
             const auto& g = it->second;
 
-            min_y = std::min(min_y, g.y0 * size);
-            max_y = std::max(max_y, g.y1 * size);
+            min_y = std::min(min_y, g.y0 * effective_size);
+            max_y = std::max(max_y, g.y1 * effective_size);
 
-            width += g.advance * size;
+            float advance = g.advance * size;
+            if (use_aliased) {
+                width += std::floor(advance + 0.5f);
+            } else {
+                width += advance;
+            }
         }
 
         return glm::vec2(width, max_y - min_y);

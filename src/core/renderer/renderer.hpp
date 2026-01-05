@@ -60,6 +60,7 @@ namespace selaura {
         winrt::com_ptr<ID3D11ShaderResourceView> texture;
         std::map<uint32_t, glyph> glyphs;
         float px_range;
+        bool prefers_aliased = false;
     };
 
     class renderer {
@@ -99,8 +100,8 @@ namespace selaura {
         void draw_gradient_rect(float x, float y, float w, float h, float radius, glm::vec4 col_tl, glm::vec4 col_tr, glm::vec4 col_bl, glm::vec4 col_br, float rotation = 0.0f);
         void draw_image(Resource res, float x, float y, float w, float h, float radius = 0.0f, glm::vec4 tint = {255, 255, 255, 255}, float rotation = 0.0f);
         void draw_gif(Resource res, float x, float y, float w, float h, float radius = 0.0f);
-        void set_font(Resource tex_res, Resource json_res);
-        void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color);
+        void set_font(Resource tex_res, Resource json_res, bool aliased = false);
+        void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color, int aliased = -1.f);
         glm::vec2 get_text_size(std::string_view text, float size);
         void render_batch(float screen_w, float screen_h);
     };

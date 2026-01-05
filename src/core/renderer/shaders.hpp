@@ -68,23 +68,41 @@ namespace selaura::shaders {
                 float type = input.data.w;
 
                 if (type >= 3.0) {
-                    float px_range = 8.0;
+                    float aliased_flag = input.data.z;
                     float2 uv = input.uv;
-                    float2 dx = ddx(uv);
-                    float2 dy = ddy(uv);
-                    float2 uv_offsets[4] = { float2(-0.125, -0.375), float2(0.375, -0.125), float2(0.125, 0.375), float2(-0.375, 0.125) };
-                    float total_opacity = 0.0;
-                    [unroll]
-                    for (int i = 0; i < 4; i++) {
-                        float2 s_uv = uv + uv_offsets[i].x * dx + uv_offsets[i].y * dy;
-                        float3 msd = tex.SampleLevel(smp, float3(s_uv, 0), 0).rgb;
+
+                    if (aliased_flag > 0.5) {
+                        uint width, height, elements;
+                        tex.GetDimensions(width, height, elements);
+                        float2 tex_size = float2(width, height);
+
+                        float2 snapped_uv = (floor(uv * tex_size) + 0.5) / tex_size;
+                        float3 msd = tex.SampleLevel(smp, float3(snapped_uv, 0), 0).rgb;
+
                         float sd = median(msd.r, msd.g, msd.b);
-                        float2 sig = float2(ddx(sd), ddy(sd));
-                        total_opacity += saturate(((sd - 0.5) / (length(sig) + 0.0001)) + 0.5);
+
+                        if (sd < 0.5) discard;
+
+                        return input.col;
+                    } else {
+                        float px_range = 8.0;
+                        float2 dx = ddx(uv);
+                        float2 dy = ddy(uv);
+                        float2 uv_offsets[4] = { float2(-0.125, -0.375), float2(0.375, -0.125),
+                                                 float2(0.125, 0.375), float2(-0.375, 0.125) };
+                        float total_opacity = 0.0;
+                        [unroll]
+                        for (int i = 0; i < 4; i++) {
+                            float2 s_uv = uv + uv_offsets[i].x * dx + uv_offsets[i].y * dy;
+                            float3 msd = tex.SampleLevel(smp, float3(s_uv, 0), 0).rgb;
+                            float sd = median(msd.r, msd.g, msd.b);
+                            float2 sig = float2(ddx(sd), ddy(sd));
+                            total_opacity += saturate(((sd - 0.5) / (length(sig) + 0.0001)) + 0.5);
+                        }
+                        float opacity = pow(smoothstep(0.05, 0.95, total_opacity / 4.0), 1.0 / 1.35);
+                        if (opacity < 0.01) discard;
+                        return float4(input.col.rgb, input.col.a * opacity);
                     }
-                    float opacity = pow(smoothstep(0.05, 0.95, total_opacity / 4.0), 1.0 / 1.35);
-                    if (opacity < 0.01) discard;
-                    return float4(input.col.rgb, input.col.a * opacity);
                 }
 
                 if (type >= 2.0) {
