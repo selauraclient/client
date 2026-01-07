@@ -23,6 +23,7 @@
 // STL
 #include <atomic>
 #include <bit>
+#include <bitset>
 #include <exception>
 #include <filesystem>
 #include <memory>

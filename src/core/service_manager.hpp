@@ -5,6 +5,7 @@
 #include <core/service/console.hpp>
 #include <core/service/notification_manager.hpp>
 #include <core/renderer/renderer.hpp>
+#include <core/service/input_manager.hpp>
 
 namespace selaura {
     struct service_manager_impl {
@@ -12,7 +13,8 @@ namespace selaura {
             event_manager,
             console,
             notification_manager,
-            renderer
+            renderer,
+            input_manager
         >;
 
         template <typename T>

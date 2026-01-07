@@ -138,6 +138,7 @@ add_library(Selaura SHARED
         core/renderer/sui.cpp
         core/service/console.cpp
         core/service/notification_manager.cpp
+        core/service/input_manager.cpp
         ${EMBEDDED_RESOURCES}
 )
 
