@@ -90,6 +90,10 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     //selaura::get<selaura::event_manager>().subscribe(&drawMenu);
     selaura::get<selaura::event_manager>().subscribe(&drawFps);
 
+    GameInput::v2::IGameInput* game_input = nullptr;
+    if (FAILED(GameInput::v2::GameInputCreate(&game_input))) spdlog::info("No GameInput");
+    selaura::hook<&GameInput::v2::IGameInput::GetCurrentReading>::enable(game_input, 4);
+
     const int target_ms = 5000;
     const int interval_ms = 100;
     int hold_time = 0;

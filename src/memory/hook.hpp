@@ -1,8 +1,10 @@
 #pragma once
 #include <pch.hpp>
+
 #include <memory/cleanup.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
+#include <memory/magic_vtable.hpp>
 #include <memory/memory.hpp>
 
 namespace selaura {
@@ -26,13 +28,21 @@ namespace selaura {
 
             void* target = nullptr;
 
-            if constexpr (std::is_member_function_pointer_v<decltype(T)>) {
-                constexpr size_t idx = selaura::vtable_index<T>();
-                void** vtable = *reinterpret_cast<void***>(instance);
-                target = vtable[idx];
-            } else {
-                target = reinterpret_cast<void*>(T);
-            }
+            constexpr size_t idx = magic_vft::vtable_index<T>();
+            void** vtable = *reinterpret_cast<void***>(instance);
+            target = vtable[idx];
+
+            enable_internal(target);
+        }
+
+        template<typename InstanceType>
+        static void enable(InstanceType* instance, std::size_t index) {
+            check_detour();
+
+            void* target = nullptr;
+
+            void** vtable = *reinterpret_cast<void***>(instance);
+            target = vtable[index];
 
             enable_internal(target);
         }
