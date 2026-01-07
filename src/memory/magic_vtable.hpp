@@ -1,5 +1,4 @@
 #pragma once
-#include <sdk/core/GameInput_GDK.h>
 
 #ifndef MAGIC_VTABLE_LIB
 #define MAGIC_VTABLE_LIB

@@ -1,9 +1,9 @@
 #pragma once
 #include <pch.hpp>
+#include <sdk/core/GameInput_GDK.h>
 
 using namespace GameInput::v2;
 namespace selaura {
-
     enum mouse_button : uint32_t {
         left = 1,
         right = 2,
@@ -18,15 +18,15 @@ namespace selaura {
         void update(UINT uMsg, WPARAM wParam, LPARAM lParam);
         void update(GameInputMouseState state);
 
-        glm::vec2 get_mouse_pos() const;
-        glm::vec2 get_mouse_delta() const;
-        int32_t get_scroll_delta() const;
+        [[nodiscard]] glm::vec2 get_mouse_pos() const;
+        [[nodiscard]] glm::vec2 get_mouse_delta() const;
+        [[nodiscard]] int32_t get_scroll_delta() const;
 
-        bool is_key_down(uint32_t vk) const;
-        bool is_key_pressed(uint32_t vk) const;
+        [[nodiscard]] bool is_key_down(uint32_t vk) const;
+        [[nodiscard]] bool is_key_pressed(uint32_t vk) const;
 
-        bool is_down(uint32_t button) const;
-        bool is_pressed(uint32_t button) const;
+        [[nodiscard]] bool is_down(uint32_t button) const;
+        [[nodiscard]] bool is_pressed(uint32_t button) const;
     private:
         std::bitset<256> keys_curr{};
         std::bitset<256> keys_prev{};

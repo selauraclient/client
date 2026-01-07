@@ -11,6 +11,23 @@
 #include <stb_image.h>
 
 namespace selaura {
+    void rotate_point(float& x, float& y, float cx, float cy, float angle) {
+        if (std::abs(angle) < 0.001f) return;
+
+        const float rad = glm::radians(angle);
+        const float s = std::sin(rad);
+        const float c = std::cos(rad);
+
+        x -= cx;
+        y -= cy;
+
+        const float nx = x * c - y * s;
+        const float ny = x * s + y * c;
+
+        x = nx + cx;
+        y = ny + cy;
+    }
+
     void render_buffer::update(ID3D11Device* device, ID3D11DeviceContext* ctx, const std::vector<vertex>& data) {
         if (data.empty()) return;
 
@@ -36,23 +53,6 @@ namespace selaura {
     glm::vec4 renderer::normalize_color(glm::vec4 c) {
         bool is_255 = (c.r > 1.0f || c.g > 1.0f || c.b > 1.0f || c.a > 1.0f);
         return is_255 ? (c / 255.0f) : c;
-    }
-
-    void rotate_point(float& x, float& y, float cx, float cy, float angle) {
-        if (angle == 0.0f) return;
-
-        float rad = angle * (3.14159265f / 180.0f);
-        float s = sin(rad);
-        float c = cos(rad);
-
-        x -= cx;
-        y -= cy;
-
-        float nx = x * c - y * s;
-        float ny = x * s + y * c;
-
-        x = nx + cx;
-        y = ny + cy;
     }
 
     ID3D11ShaderResourceView* renderer::get_or_create_texture(Resource res) {
@@ -432,7 +432,7 @@ namespace selaura {
             }
         }
 
-        return glm::vec2(width, max_y - min_y);
+        return {width, max_y - min_y};
     }
 
     void renderer::init(ID3D11Device* p_device) {
@@ -499,7 +499,7 @@ namespace selaura {
 
         D3D11_MAPPED_SUBRESOURCE res;
         if (SUCCEEDED(ctx->Map(constant_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &res))) {
-            *(DirectX::XMMATRIX*)res.pData = DirectX::XMMatrixTranspose(
+            *static_cast<DirectX::XMMATRIX*>(res.pData) = DirectX::XMMatrixTranspose(
                 DirectX::XMMatrixOrthographicOffCenterLH(0, screen_w, screen_h, 0, 0, 1)
             );
             ctx->Unmap(constant_buffer.get(), 0);

@@ -12,7 +12,6 @@
 #include <Psapi.h>
 #include <shlobj_core.h>
 #include <winrt/base.h>
-#include <sdk/core/GameInput_GDK.h>
 
 #include <d3d11.h>
 #include <d3d12.h>

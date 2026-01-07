@@ -4,6 +4,7 @@
 #include <core/service_manager.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
+#include <sdk/core/GameInput_GDK.h>
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 namespace selaura {
