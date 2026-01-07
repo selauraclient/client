@@ -100,9 +100,7 @@ namespace selaura {
 
         static void* get_target_address() {
             if constexpr (std::is_member_function_pointer_v<decltype(T)>) {
-                union { decltype(T) fn; void* ptr; } u;
-                u.fn = T;
-                return u.ptr;
+                return std::bit_cast<void*>(T);
             } else {
                 return reinterpret_cast<void*>(T);
             }

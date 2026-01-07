@@ -54,6 +54,7 @@ CPMAddPackage("gh:ocornut/imgui#master")
 CPMAddPackage("gh:g-truc/glm#master")
 CPMAddPackage("gh:nlohmann/json#develop")
 CPMAddPackage("gh:nothings/stb#master")
+CPMAddPackage("gh:DisabledMallis/magic_vtable#main")
 CPMAddPackage(URI "gh:gabime/spdlog#v1.x" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
 
 set(MSDF_GEN_EXE "${CMAKE_SOURCE_DIR}/msdf-atlas-gen.exe")
@@ -167,6 +168,7 @@ target_include_directories(Selaura PRIVATE
         ${imgui_SOURCE_DIR}
         ${nlohmann_json_SOURCE_DIR}/include
         ${stb_SOURCE_DIR}
+        ${magic_vtable_SOURCE_DIR}
 )
 
 target_link_libraries(Selaura PUBLIC

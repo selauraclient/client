@@ -18,19 +18,25 @@ namespace selaura {
 
         static uintptr_t resolve() {
             uintptr_t addr = reinterpret_cast<uintptr_t>(hat::find_pattern(compiled_pattern, ".text").get());
+            if (!addr) return 0;
 
             if constexpr (!std::is_void_v<Offset>) {
+                const uintptr_t target_ptr = addr + Offset::offset;
+
                 if constexpr (std::is_same_v<typename Offset::mode, deref>) {
-                    int32_t displacement = *reinterpret_cast<int32_t*>(addr + Offset::offset);
-                    uintptr_t next_instruction = addr + Offset::offset + sizeof(int32_t);
+                    std::int32_t displacement{};
+                    std::memcpy(&displacement, reinterpret_cast<void*>(target_ptr), sizeof(std::int32_t));
+
+                    uintptr_t next_instruction = target_ptr + sizeof(std::int32_t);
                     return next_instruction + displacement;
                 } else {
-                    uintptr_t final = *reinterpret_cast<int *>(addr + Offset::offset);
-                    return final;
+                    std::int32_t value{};
+                    std::memcpy(&value, reinterpret_cast<void*>(target_ptr), sizeof(std::int32_t));
+                    return static_cast<uintptr_t>(value);
                 }
-            } else {
-                return addr;
             }
+
+            return addr;
         }
     };
 };
