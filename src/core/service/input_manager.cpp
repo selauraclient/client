@@ -31,22 +31,48 @@ namespace selaura {
         bool has_buttons = (state.buttons != GameInputMouseButtons::GameInputMouseNone);
 
         if (has_movement || has_abs_pos || has_buttons) {
+            bool now_cancelled = this->cancel_input;
+
+            if (now_cancelled != was_cancelled) {
+                this->mouse_pos = {
+                    state.absolutePositionX,
+                    state.absolutePositionY
+                };
+
+                this->last_mouse_pos = this->mouse_pos;
+                this->mouse_delta = { 0.f, 0.f };
+                this->scroll_wheel_delta = 0;
+
+                previous_buttons = current_buttons;
+                was_cancelled = now_cancelled;
+                return;
+            }
+
+            if (now_cancelled) {
+                this->mouse_delta = { 0.f, 0.f };
+                this->scroll_wheel_delta = 0;
+                return;
+            }
+
             previous_buttons = current_buttons;
             current_buttons = state.buttons;
 
             this->mouse_pos = {
-                state.positionX,
-                state.positionY
-            };
-
-            this->mouse_delta = {
                 state.absolutePositionX,
                 state.absolutePositionY
+            };
+
+            this->last_mouse_pos = this->mouse_pos;
+
+            this->mouse_delta = {
+                state.positionX,
+                state.positionY
             };
 
             this->scroll_wheel_delta = state.wheelY;
         }
     }
+
 
     bool input_manager::is_down(uint32_t button) const {
         return (static_cast<uint32_t>(current_buttons) & static_cast<uint32_t>(button)) != 0;
@@ -76,5 +102,17 @@ namespace selaura {
 
     bool input_manager::is_key_pressed(uint32_t vk) const {
         return keys_curr.test(vk) && !keys_prev.test(vk);
+    }
+
+    void input_manager::set_input_cancelled(bool state) {
+        this->cancel_input = state;
+    }
+
+    bool input_manager::is_input_cancelled() const {
+        return this->cancel_input;
+    }
+
+    glm::vec2 input_manager::get_last_mouse_pos() const {
+        return this->last_mouse_pos;
     }
 };

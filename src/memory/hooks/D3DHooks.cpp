@@ -263,6 +263,8 @@ struct selaura::detour<&IDXGISwapChain::Present> {
             selaura::get<selaura::event_manager>().dispatch(ev);
             renderer.render_batch(desc.BufferDesc.Width, desc.BufferDesc.Height);
 
+            if (selaura::get<selaura::input_manager>().is_key_down(0x4C)) selaura::get<selaura::input_manager>().set_input_cancelled(true); else selaura::get<selaura::input_manager>().set_input_cancelled(false);
+
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
