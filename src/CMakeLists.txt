@@ -52,7 +52,7 @@ CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
 CPMAddPackage("gh:cursey/SafetyHook#main")
 CPMAddPackage("gh:ocornut/imgui#master")
 CPMAddPackage("gh:g-truc/glm#master")
-CPMAddPackage("gh:nlohmann/json#develop")
+CPMAddPackage("gh:stephenberry/glaze#main")
 CPMAddPackage("gh:nothings/stb#master")
 CPMAddPackage("gh:DisabledMallis/magic_vtable#main")
 CPMAddPackage(URI "gh:gabime/spdlog#v1.x" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
@@ -147,7 +147,7 @@ if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
     target_compile_options(Selaura PRIVATE
             $<$<CONFIG:Release>:
             /O2 /Oi /Ot /Gw /Gy /fp:fast
-            /EHa- /EHs- /EHc- /D_HAS_EXCEPTIONS=0
+            /EHs- /EHc- /GR- /D_HAS_EXCEPTIONS=0
             >
     )
     target_link_options(Selaura PRIVATE
@@ -178,6 +178,7 @@ target_link_libraries(Selaura PUBLIC
         safetyhook::safetyhook
         spdlog
         glm
+        glaze::glaze
         ${SDK_LIB}
         Version.lib dwmapi.lib d3d11.lib d3d12.lib dxgi.lib d3dcompiler.lib gameinput.lib windowsapp
 )

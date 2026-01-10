@@ -35,7 +35,7 @@
 #include <type_traits>
 #include <vector>
 
-#include <nlohmann/json.hpp>
+#include <glaze/glaze.hpp>
 #include <glm/glm.hpp>
 #include <fmt/base.h>
 #include <fmt/format.h>

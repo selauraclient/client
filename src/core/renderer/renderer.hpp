@@ -7,6 +7,32 @@ namespace selaura {
     enum class blend_mode { normal, multiply };
     enum class draw_type : int { rect = 0, circle = 1, image = 2 };
 
+    struct atlas_info {
+        float distanceRange;
+        float width;
+        float height;
+    };
+
+    struct plane_bounds {
+        float left, bottom, right, top;
+    };
+
+    struct atlas_bounds {
+        float left, bottom, right, top;
+    };
+
+    struct glyph_entry {
+        uint32_t unicode;
+        float advance = 0.0f;
+        std::optional<plane_bounds> planeBounds;
+        std::optional<atlas_bounds> atlasBounds;
+    };
+
+    struct msdf_json {
+        atlas_info atlas;
+        std::vector<glyph_entry> glyphs;
+    };
+
     struct vertex {
         glm::vec3 pos;
         glm::vec4 color;
@@ -63,6 +89,13 @@ namespace selaura {
         bool prefers_aliased = false;
     };
 
+    struct text_metrics {
+        float width;
+        float height;
+        float ascent;
+        float descent;
+    };
+
     class renderer {
         tessellator tess;
         render_buffer v_buffer;
@@ -102,7 +135,7 @@ namespace selaura {
         void draw_gif(Resource res, float x, float y, float w, float h, float radius = 0.0f);
         void set_font(Resource tex_res, Resource json_res, bool aliased = false);
         void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color, int aliased = -1.f);
-        glm::vec2 get_text_size(std::string_view text, float size);
+        glm::vec2 get_text_size(std::string_view text, float size, int aliased = -1.f);
         void render_batch(float screen_w, float screen_h);
     };
 }

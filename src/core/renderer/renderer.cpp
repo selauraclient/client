@@ -28,6 +28,23 @@ namespace selaura {
         y = ny + cy;
     }
 
+    uint32_t decode_utf8(std::string_view text, size_t& i) {
+        uint32_t c = (unsigned char)text[i++];
+        if (c >= 0x80) {
+            if ((c & 0xE0) == 0xC0 && i < text.length()) {
+                c = ((c & 0x1F) << 6) | ((unsigned char)text[i++] & 0x3F);
+            } else if ((c & 0xF0) == 0xE0 && i + 1 < text.length()) {
+                c = ((c & 0x0F) << 12) | (((unsigned char)text[i++] & 0x3F) << 6);
+                c |= ((unsigned char)text[i++] & 0x3F);
+            } else if ((c & 0xF8) == 0xF0 && i + 2 < text.length()) {
+                c = ((c & 0x07) << 18) | (((unsigned char)text[i++] & 0x3F) << 12);
+                c |= (((unsigned char)text[i++] & 0x3F) << 6);
+                c |= ((unsigned char)text[i++] & 0x3F);
+            }
+        }
+        return c;
+    }
+
     void render_buffer::update(ID3D11Device* device, ID3D11DeviceContext* ctx, const std::vector<vertex>& data) {
         if (data.empty()) return;
 
@@ -56,8 +73,9 @@ namespace selaura {
     }
 
     ID3D11ShaderResourceView* renderer::get_or_create_texture(Resource res) {
-        if (texture_cache.count(res.begin())) {
-            return texture_cache[res.begin()].get();
+        auto it = texture_cache.find((const char*)res.begin());
+        if (it != texture_cache.end()) {
+            return it->second.get();
         }
 
         int w, h, n;
@@ -67,7 +85,10 @@ namespace selaura {
             (int)res.size(), &w, &h, &n, 4
         );
 
-        if (!pixels) return nullptr;
+        if (!pixels) {
+            spdlog::error("Failed to load texture from memory. Resource size: {}", res.size());
+            return nullptr;
+        }
 
         D3D11_TEXTURE2D_DESC tex_desc{};
         tex_desc.Width            = (UINT)w;
@@ -82,18 +103,23 @@ namespace selaura {
         D3D11_SUBRESOURCE_DATA init_data{ pixels, (UINT)(w * 4) };
 
         winrt::com_ptr<ID3D11Texture2D> tex;
-        device->CreateTexture2D(&tex_desc, &init_data, tex.put());
+        HRESULT hr = device->CreateTexture2D(&tex_desc, &init_data, tex.put());
+        if (FAILED(hr)) {
+            spdlog::error("CreateTexture2D failed with HRESULT: 0x{:X}", (unsigned int)hr);
+            stbi_image_free(pixels);
+            return nullptr;
+        }
 
         winrt::com_ptr<ID3D11ShaderResourceView> srv;
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{};
-        srv_desc.Format                    = tex_desc.Format;
-        srv_desc.ViewDimension             = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-        srv_desc.Texture2DArray.ArraySize  = 1;
-        srv_desc.Texture2DArray.MipLevels  = 1;
-
-        device->CreateShaderResourceView(tex.get(), &srv_desc, srv.put());
+        hr = device->CreateShaderResourceView(tex.get(), nullptr, srv.put());
+        if (FAILED(hr)) {
+            spdlog::error("CreateShaderResourceView failed with HRESULT: 0x{:X}", (unsigned int)hr);
+            stbi_image_free(pixels);
+            return nullptr;
+        }
 
         stbi_image_free(pixels);
+
         return (texture_cache[res.begin()] = srv).get();
     }
 
@@ -278,53 +304,71 @@ namespace selaura {
     }
 
     void renderer::set_font(Resource tex_res, Resource json_res, bool aliased) {
-        if (font_cache.count(tex_res.begin())) {
-            current_font = &font_cache[tex_res.begin()];
+        if (font_cache.count((const char*)tex_res.begin())) {
+            current_font = &font_cache[(const char*)tex_res.begin()];
+            return;
+        }
+
+        spdlog::debug("Initializing new font...");
+
+        msdf_json data_json{};
+        auto error = glz::read<glz::opts{.error_on_unknown_keys = false}>(
+            data_json,
+            std::string_view((char*)json_res.data(), json_res.size())
+        );
+
+        if (error) {
+            std::string err_pretty = glz::format_error(error, std::string_view((char*)json_res.data(), json_res.size()));
+            spdlog::error("Glaze JSON parsing failed: {}", err_pretty);
+            return;
+        }
+
+        ID3D11ShaderResourceView* font_srv = get_or_create_texture(tex_res);
+        if (!font_srv) {
+            spdlog::error("Failed to create/retrieve font texture.");
             return;
         }
 
         font_data font;
-        int w, h, n;
-        unsigned char* data = stbi_load_from_memory((const unsigned char*)tex_res.data(), (int)tex_res.size(), &w, &h, &n, 4);
-        if (!data) return;
 
-        D3D11_TEXTURE2D_DESC desc{ (UINT)w, (UINT)h, 1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, {1, 0}, D3D11_USAGE_IMMUTABLE, D3D11_BIND_SHADER_RESOURCE };
-        D3D11_SUBRESOURCE_DATA sub{ data, (UINT)(w * 4) };
+        font.texture.copy_from(font_srv);
 
-        winrt::com_ptr<ID3D11Texture2D> tex;
-        device->CreateTexture2D(&desc, &sub, tex.put());
-
-        D3D11_SHADER_RESOURCE_VIEW_DESC srv_d{};
-        srv_d.Format = desc.Format;
-        srv_d.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-        srv_d.Texture2DArray = { 0, 1, 0, 1 };
-
-        device->CreateShaderResourceView(tex.get(), &srv_d, font.texture.put());
-        stbi_image_free(data);
-
-        auto j = nlohmann::json::parse(std::string_view((char*)json_res.data(), json_res.size()));
-        font.px_range = j["atlas"]["distanceRange"];
+        font.px_range = data_json.atlas.distanceRange;
         font.prefers_aliased = aliased;
 
-        for (auto& g : j["glyphs"]) {
-            glyph& gl = font.glyphs[g["unicode"]];
-            gl.advance = g.value("advance", 0.0f);
+        float tw = (float)data_json.atlas.width;
+        float th = (float)data_json.atlas.height;
 
-            if (g.contains("planeBounds")) {
-                auto& b = g["planeBounds"];
-                gl.x0 = b["left"];   gl.y0 = b["bottom"];
-                gl.x1 = b["right"];  gl.y1 = b["top"];
+        for (const auto& g : data_json.glyphs) {
+            glyph& gl = font.glyphs[g.unicode];
+            gl.advance = g.advance;
+
+            if (g.planeBounds) {
+                const auto& b = *g.planeBounds;
+                gl.x0 = b.left;
+                gl.y0 = b.bottom;
+                gl.x1 = b.right;
+                gl.y1 = b.top;
+            } else {
+                gl.x0 = gl.y0 = gl.x1 = gl.y1 = 0.0f;
             }
-            if (g.contains("atlasBounds")) {
-                auto& b = g["atlasBounds"];
-                float tw = j["atlas"]["width"], th = j["atlas"]["height"];
-                gl.u0 = (float)b["left"] / tw;
-                gl.u1 = (float)b["right"] / tw;
-                gl.v0 = 1.0f - ((float)b["top"] / th);
-                gl.v1 = 1.0f - ((float)b["bottom"] / th);
+
+            if (g.atlasBounds) {
+                const auto& b = *g.atlasBounds;
+                gl.u0 = b.left / tw;
+                gl.u1 = b.right / tw;
+
+                gl.v0 = 1.0f - (b.top / th);
+                gl.v1 = 1.0f - (b.bottom / th);
             }
         }
-        current_font = &(font_cache[tex_res.begin()] = std::move(font));
+
+        const char* key = (const char*)tex_res.begin();
+        font_cache[key] = std::move(font);
+        current_font = &font_cache[key];
+
+        spdlog::info("Font '{}' successfully loaded. Atlas: {}x{}, Glyphs: {}",
+            key, data_json.atlas.width, data_json.atlas.height, data_json.glyphs.size());
     }
 
     void renderer::draw_text(std::string_view text, float x, float y, float size, glm::vec4 color, int aliased) {
@@ -338,27 +382,23 @@ namespace selaura {
 
         glm::vec4 cols[4] = { color, color, color, color };
         float aa_flag = use_aliased ? 1.0f : 0.0f;
+        float effective_size = use_aliased ? std::round(size) : size;
 
-        for (size_t i = 0; i < text.length(); ) {
-            uint32_t c = (unsigned char)text[i++];
+        float first_glyph_left = 0.0f;
+        bool first_glyph = true;
 
-            if (c >= 0x80) {
-                if ((c & 0xE0) == 0xC0) {
-                    c = ((c & 0x1F) << 6) | ((unsigned char)text[i++] & 0x3F);
-                } else if ((c & 0xF0) == 0xE0) {
-                    c = ((c & 0x0F) << 12) | (((unsigned char)text[i++] & 0x3F) << 6);
-                    c |= ((unsigned char)text[i++] & 0x3F);
-                } else if ((c & 0xF8) == 0xF0) {
-                    c = ((c & 0x07) << 18) | (((unsigned char)text[i++] & 0x3F) << 12);
-                    c |= (((unsigned char)text[i++] & 0x3F) << 6);
-                    c |= ((unsigned char)text[i++] & 0x3F);
-                }
-            }
+        for (size_t i = 0; i < text.length();) {
+            uint32_t c = decode_utf8(text, i);
 
             if (!current_font->glyphs.count(c)) continue;
             const auto& g = current_font->glyphs.at(c);
 
-            float effective_size = use_aliased ? std::round(size) : size;
+            if (first_glyph) {
+                first_glyph_left = g.x0 * effective_size;
+                cur_x -= first_glyph_left;
+                first_glyph = false;
+            }
+
             float gx = cur_x + g.x0 * effective_size;
             float gy = cur_y - g.y1 * effective_size;
             float gw = (g.x1 - g.x0) * effective_size;
@@ -367,10 +407,13 @@ namespace selaura {
             if (use_aliased) {
                 float snapped_gx = std::floor(gx + 0.5f);
                 float snapped_gy = std::floor(gy + 0.5f);
-                gw = std::floor(gx + gw + 0.5f) - snapped_gx;
-                gh = std::floor(gy + gh + 0.5f) - snapped_gy;
+                float snapped_gx2 = std::floor(gx + gw + 0.5f);
+                float snapped_gy2 = std::floor(gy + gh + 0.5f);
+
                 gx = snapped_gx;
                 gy = snapped_gy;
+                gw = snapped_gx2 - snapped_gx;
+                gh = snapped_gy2 - snapped_gy;
             }
 
             push_rect_gradient(gx, gy, gw, gh, 0.0f, cols, 3.0f, 0.0f, aa_flag);
@@ -378,61 +421,74 @@ namespace selaura {
             auto& v = tess.vertices;
             size_t v_idx = v.size() - 6;
 
-            v[v_idx+0].uv = {g.u0, g.v0}; v[v_idx+1].uv = {g.u1, g.v0}; v[v_idx+2].uv = {g.u0, g.v1};
-            v[v_idx+3].uv = {g.u1, g.v0}; v[v_idx+4].uv = {g.u1, g.v1}; v[v_idx+5].uv = {g.u0, g.v1};
+            v[v_idx+0].uv = {g.u0, g.v0};
+            v[v_idx+1].uv = {g.u1, g.v0};
+            v[v_idx+2].uv = {g.u0, g.v1};
+            v[v_idx+3].uv = {g.u1, g.v0};
+            v[v_idx+4].uv = {g.u1, g.v1};
+            v[v_idx+5].uv = {g.u0, g.v1};
 
             float advance = g.advance * size;
-            if (use_aliased) {
-                cur_x += std::floor(advance + 0.5f);
-            } else {
-                cur_x += advance;
-            }
+            cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
         }
     }
 
-    glm::vec2 renderer::get_text_size(std::string_view text, float size) {
-        if (!current_font || text.empty()) return { 0.0f, 0.0f };
+    glm::vec2 renderer::get_text_size(std::string_view text, float size, int aliased) {
+        if (!current_font || text.empty()) return {0.0f, 0.0f};
 
-        bool use_aliased = current_font->prefers_aliased;
-        float effective_size = use_aliased ? std::round(size) : size;
+        bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
+        float cur_x = use_aliased ? std::floor(0.5f) : 0.0f;
+        float cur_y = 0.0f;
 
-        float width = 0.0f;
-        float min_y = 0.0f;
-        float max_y = 0.0f;
+        float min_x = std::numeric_limits<float>::max();
+        float max_x = std::numeric_limits<float>::lowest();
+        float min_y = std::numeric_limits<float>::max();
+        float max_y = std::numeric_limits<float>::lowest();
 
-        for (size_t i = 0; i < text.length(); ) {
-            uint32_t c = (unsigned char)text[i++];
+        float first_glyph_left = 0.0f;
+        bool first_glyph = true;
 
-            if (c >= 0x80) {
-                if ((c & 0xE0) == 0xC0 && i < text.length()) {
-                    c = ((c & 0x1F) << 6) | ((unsigned char)text[i++] & 0x3F);
-                } else if ((c & 0xF0) == 0xE0 && i + 1 < text.length()) {
-                    c = ((c & 0x0F) << 12) | (((unsigned char)text[i++] & 0x3F) << 6);
-                    c |= ((unsigned char)text[i++] & 0x3F);
-                } else if ((c & 0xF8) == 0xF0 && i + 2 < text.length()) {
-                    c = ((c & 0x07) << 18) | (((unsigned char)text[i++] & 0x3F) << 12);
-                    c |= (((unsigned char)text[i++] & 0x3F) << 6);
-                    c |= ((unsigned char)text[i++] & 0x3F);
-                }
-            }
-
+        for (size_t i = 0; i < text.length();) {
+            uint32_t c = decode_utf8(text, i);
             auto it = current_font->glyphs.find(c);
             if (it == current_font->glyphs.end()) continue;
 
             const auto& g = it->second;
 
-            min_y = std::min(min_y, g.y0 * effective_size);
-            max_y = std::max(max_y, g.y1 * effective_size);
+            if (first_glyph) {
+                first_glyph_left = g.x0 * size;
+                cur_x -= first_glyph_left;
+                first_glyph = false;
+            }
+
+            float gx = cur_x + g.x0 * size;
+            float gy = cur_y - g.y1 * size;
+            float gw = (g.x1 - g.x0) * size;
+            float gh = (g.y1 - g.y0) * size;
+
+            if (use_aliased) {
+                float snapped_gx = std::floor(gx + 0.5f);
+                float snapped_gy = std::floor(gy + 0.5f);
+                float snapped_gx2 = std::floor(gx + gw + 0.5f);
+                float snapped_gy2 = std::floor(gy + gh + 0.5f);
+
+                gx = snapped_gx;
+                gy = snapped_gy;
+                gw = snapped_gx2 - snapped_gx;
+                gh = snapped_gy2 - snapped_gy;
+            }
+
+            min_x = std::min(min_x, gx);
+            max_x = std::max(max_x, gx + gw);
+            min_y = std::min(min_y, gy);
+            max_y = std::max(max_y, gy + gh);
 
             float advance = g.advance * size;
-            if (use_aliased) {
-                width += std::floor(advance + 0.5f);
-            } else {
-                width += advance;
-            }
+            cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
         }
 
-        return {width, max_y - min_y};
+        if (min_x > max_x || min_y > max_y) return {0.0f, 0.0f};
+        return { max_x - min_x, max_y - min_y };
     }
 
     void renderer::init(ID3D11Device* p_device) {
