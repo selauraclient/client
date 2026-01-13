@@ -132,11 +132,12 @@ add_library(Selaura SHARED
         ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
-        core/renderer/renderer.cpp
+        core/renderer/sgfx.cpp
+        core/renderer/renderer_d3d.cpp
+        core/renderer/renderer_d3d11.cpp
         memory/hooks/CoreHooks.cpp
         memory/hooks/D3DHooks.cpp
         memory/hooks/InputHooks.cpp
-        core/renderer/sui.cpp
         core/service/console.cpp
         core/service/notification_manager.cpp
         core/service/input_manager.cpp

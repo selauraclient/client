@@ -1,7 +1,7 @@
 #include <pch.hpp>
 
 #include <core/service_manager.hpp>
-#include <core/renderer/sui.hpp>
+//#include <core/renderer/sui.hpp>
 #include <core/service/console_sink.hpp>
 #include <memory/cleanup.hpp>
 #include <memory/hook.hpp>
@@ -22,43 +22,10 @@ void EjectAndExit(HMODULE hModule) {
     Sleep(100);
 
     spdlog::shutdown();
+    sgfx::shutdown();
     selaura::get<selaura::console>().shutdown();
 
     FreeLibraryAndExitThread(hModule, 0);
-}
-
-void drawMenu(selaura::render_event& ev) {
-    using namespace selaura;
-    auto menu_width = ev.screenWidth * 0.55;
-    auto menu_height = ev.screenHeight * 0.65;
-
-    auto menu_x = (ev.screenWidth - menu_width) / 2;
-    auto menu_y = (ev.screenHeight - menu_height) / 2;
-
-    auto sidebar_width = menu_width * 0.27;
-
-    sui::panel(menu_x, menu_y, menu_width, menu_height, 15);
-    sui::panel(menu_x, menu_y, sidebar_width, menu_height, 15, sui::panel_types::raised);
-    sui::logo(menu_x + 15, menu_y + 15, 32);
-    sui::text(menu_x + 55, menu_y + 38, 24, "selaura");
-}
-
-void drawFps(selaura::render_event& ev) {
-    auto& renderer = selaura::get<selaura::renderer>();
-    std::string text = fmt::format("{:.0f} FPS", ev.fps);
-
-    auto fps_text = renderer.get_text_size(text, 24);
-    auto fps_padding = glm::vec2{35, 20};
-    auto fps_size = fps_text + fps_padding;
-
-    float rect_x = 20.0f;
-    float rect_y = 20.0f;
-
-    float text_x = rect_x + (fps_size.x / 2.0f) - (fps_text.x / 2.0f);
-    float text_y = rect_y + (fps_size.y * 0.5f) + (fps_text.y * 0.5f);
-
-    renderer.draw_filled_rect(rect_x, rect_y, fps_size.x, fps_size.y, 5.0f, {24, 24, 24, 255});
-    renderer.draw_text(text, text_x, text_y, 24, {255, 255, 255, 255});
 }
 
 DWORD WINAPI SelauraProc(LPVOID lpParam) {
@@ -89,7 +56,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
 
     //selaura::get<selaura::event_manager>().subscribe(&drawMenu);
-    selaura::get<selaura::event_manager>().subscribe(&drawFps);
+    //selaura::get<selaura::event_manager>().subscribe(&drawFps);
 
     GameInput::v2::IGameInput* game_input = nullptr;
     if (FAILED(GameInput::v2::GameInputCreate(&game_input))) spdlog::info("No GameInput");
