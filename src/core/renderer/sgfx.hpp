@@ -37,7 +37,7 @@ namespace sgfx {
         virtual void render(const draw_data& data) = 0;
         virtual void create_texture(void* data, int width, int height, void** out_srv) = 0;
         virtual void destroy_texture(texture_id handle) = 0;
-        virtual void create_shader(const char* vs_src, const char* ps_src) = 0;
+        virtual void create_shader() = 0;
         [[nodiscard]] virtual glm::vec2 get_screen_size() const = 0;
     };
 
