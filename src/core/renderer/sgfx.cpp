@@ -44,6 +44,8 @@ namespace sgfx {
         ctx.current_texture = nullptr;
         ctx.clip_enabled = false;
         ctx.current_clip = { 0, 0, 0, 0 };
+
+        sgfx::draw_rect(0, 0, 0, 0, {0, 0, 0, 0});
     }
 
     void begin_frame(glm::vec2 size) {
@@ -73,16 +75,12 @@ namespace sgfx {
 
     void context::add_command_if_needed() {
         bool needs_new = data.commands.empty() ||
+                         data.commands.back().is_blur ||
                          data.commands.back().texture != current_texture ||
                          data.commands.back().clip_enabled != clip_enabled ||
                          (clip_enabled && data.commands.back().clip_rect != current_clip);
         if (needs_new) {
-            draw_cmd cmd{};
-            cmd.count = 0;
-            cmd.texture = current_texture;
-            cmd.clip_rect = current_clip;
-            cmd.clip_enabled = clip_enabled;
-            data.commands.push_back(cmd);
+            data.commands.push_back({0, current_texture, current_clip, clip_enabled, false, 0.0f, 0});
         }
     }
 
@@ -90,11 +88,11 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = nullptr;
         ctx.add_command_if_needed();
-        glm::vec4 shader_params = { w, h, 0.0f, 0.0f };
-        ctx.data.vertices.push_back({ {x,     y,     0.0f}, col, {0.0f, 0.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x + w, y,     0.0f}, col, {1.0f, 0.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x + w, y + h, 0.0f}, col, {1.0f, 1.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x,     y + h, 0.0f}, col, {0.0f, 1.0f}, shader_params, radii });
+        glm::vec4 p = { w, h, 0.0f, 0.0f };
+        ctx.data.vertices.push_back({{x, y, 0}, col, {0, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y, 0}, col, {1, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, col, {1, 1}, p, radii});
+        ctx.data.vertices.push_back({{x, y+h, 0}, col, {0, 1}, p, radii});
         ctx.data.commands.back().count += 6;
     }
 
@@ -102,60 +100,49 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = tex;
         ctx.add_command_if_needed();
-        glm::vec4 shader_params = { w, h, 0.0f, 2.0f };
-        ctx.data.vertices.push_back({ {x,     y,     0.0f}, col, {0.0f, 0.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x + w, y,     0.0f}, col, {1.0f, 0.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x + w, y + h, 0.0f}, col, {1.0f, 1.0f}, shader_params, radii });
-        ctx.data.vertices.push_back({ {x,     y + h, 0.0f}, col, {0.0f, 1.0f}, shader_params, radii });
+        glm::vec4 p = { w, h, 0.0f, 2.0f };
+        ctx.data.vertices.push_back({{x, y, 0}, col, {0, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y, 0}, col, {1, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, col, {1, 1}, p, radii});
+        ctx.data.vertices.push_back({{x, y+h, 0}, col, {0, 1}, p, radii});
         ctx.data.commands.back().count += 6;
+    }
+
+    void draw_blur(float x, float y, float w, float h, float intensity, int iterations, glm::vec4 radii) {
+        auto& ctx = get_context();
+
+        draw_cmd cmd{};
+        cmd.is_blur = true;
+        cmd.blur_intensity = intensity;
+        cmd.blur_iterations = iterations;
+        cmd.count = 6;
+        ctx.data.commands.push_back(cmd);
+
+        float sw = ctx.data.display_size.x;
+        float sh = ctx.data.display_size.y;
+        float u0 = x / sw;
+        float v0 = y / sh;
+        float u1 = (x + w) / sw;
+        float v1 = (y + h) / sh;
+
+        glm::vec4 p = { w, h, 0.0f, 4.0f };
+
+        ctx.data.vertices.push_back({{x, y, 0},     {1,1,1,1}, {u0, v0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y, 0},   {1,1,1,1}, {u1, v0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, {1,1,1,1}, {u1, v1}, p, radii});
+        ctx.data.vertices.push_back({{x, y+h, 0},   {1,1,1,1}, {u0, v1}, p, radii});
+
+        ctx.current_texture = reinterpret_cast<texture_id>(-1);
     }
 
     void draw_image(Resource res, float x, float y, float w, float h, glm::vec4 col, glm::vec4 radii) {
         auto& cache = image_cache[res.begin()];
-        if (cache.id == nullptr) {
-            int channels;
-            unsigned char* pixels = stbi_load_from_memory((const stbi_uc*)res.data(), (int)res.size(), &cache.width, &cache.height, &channels, 4);
-            if (pixels) {
-                get_context().backend->create_texture(pixels, cache.width, cache.height, &cache.id);
-                stbi_image_free(pixels);
-            }
+        if (!cache.id) {
+            int c;
+            unsigned char* p = stbi_load_from_memory((const stbi_uc*)res.data(), (int)res.size(), &cache.width, &cache.height, &c, 4);
+            if (p) { get_context().backend->create_texture(p, cache.width, cache.height, &cache.id); stbi_image_free(p); }
         }
         draw_rect_textured(x, y, w, h, cache.id, col, radii);
-    }
-
-    void draw_gif(Resource res, float x, float y, float w, float h, float time, glm::vec4 col, glm::vec4 radii) {
-        auto& cache = gif_cache[res.begin()];
-        if (cache.frames.empty()) {
-            int* delays = nullptr;
-            int x_size, y_size, z_size, channels;
-            unsigned char* pixels = stbi_load_gif_from_memory((const stbi_uc*)res.data(), (int)res.size(), &delays, &x_size, &y_size, &z_size, &channels, 4);
-            if (pixels) {
-                cache.width = x_size;
-                cache.height = y_size;
-                size_t frame_size = x_size * y_size * 4;
-                for (int i = 0; i < z_size; ++i) {
-                    texture_id frame_id;
-                    get_context().backend->create_texture(pixels + (i * frame_size), x_size, y_size, &frame_id);
-                    cache.frames.push_back(frame_id);
-                    cache.delays.push_back(delays[i]);
-                    cache.total_time += (float)delays[i] / 1000.0f;
-                }
-                stbi_image_free(pixels);
-            }
-        }
-        if (!cache.frames.empty()) {
-            float t = fmod(time, cache.total_time);
-            float current_sum = 0;
-            texture_id active_frame = cache.frames[0];
-            for (size_t i = 0; i < cache.frames.size(); ++i) {
-                current_sum += (float)cache.delays[i] / 1000.0f;
-                if (t <= current_sum) {
-                    active_frame = cache.frames[i];
-                    break;
-                }
-            }
-            draw_rect_textured(x, y, w, h, active_frame, col, radii);
-        }
     }
 
     uint32_t decode_utf8(std::string_view text, size_t& i) {

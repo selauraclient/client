@@ -10,21 +10,32 @@ namespace sgfx {
         glm::vec4 radii;
     };
 
+    struct blur_cmd {
+        glm::vec4 rect;
+        float intensity;
+        int iterations;
+    };
+
     struct draw_cmd {
         uint32_t count;
         void* texture;
         glm::vec4 clip_rect;
         bool clip_enabled;
+        bool is_blur;
+        float blur_intensity;
+        int blur_iterations;
     };
 
     struct draw_data {
         std::vector<vertex> vertices;
         std::vector<draw_cmd> commands;
+        std::vector<blur_cmd> blur_commands;
         glm::vec2 display_size;
 
         void clear() {
             vertices.clear();
             commands.clear();
+            blur_commands.clear();
         }
     };
 
@@ -68,6 +79,7 @@ namespace sgfx {
 
     void draw_rect(float x, float y, float w, float h, glm::vec4 col, glm::vec4 radii = {0,0,0,0});
     void draw_rect_textured(float x, float y, float w, float h, texture_id tex, glm::vec4 col = {1,1,1,1}, glm::vec4 radii = {0,0,0,0});
+    void draw_blur(float x, float y, float w, float h, float intensity, int iterations, glm::vec4 radii = {0,0,0,0});
 
     struct texture_resource {
         texture_id id = nullptr;
@@ -130,7 +142,6 @@ namespace sgfx {
     inline font_data* current_font = nullptr;
 
     void draw_image(Resource res, float x, float y, float w, float h, glm::vec4 col = {1,1,1,1}, glm::vec4 radii = {0,0,0,0});
-    void draw_gif(Resource res, float x, float y, float w, float h, float time, glm::vec4 col = {1,1,1,1}, glm::vec4 radii = {0,0,0,0});
 
     void set_font(Resource tex_res, Resource json_res, bool aliased = -1);
     void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color = {1, 1, 1, 1}, int aliased = -1);

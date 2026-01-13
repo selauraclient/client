@@ -36,11 +36,11 @@ struct selaura::detour<&IDXGISwapChain::Present> {
             init = true;
         }
 
-        sgfx::begin_frame(sgfx::get_context().backend->get_screen_size());
+        auto screen_size = sgfx::get_context().backend->get_screen_size();
+        sgfx::begin_frame(screen_size.x, screen_size.y);
         sgfx::set_font(GET_RESOURCE(Poppins_msdf_png), GET_RESOURCE(Poppins_msdf_json), false);
-        sgfx::draw_text("Hello!", 100, 400, 72);
-        sgfx::draw_rect(100, 100, 200, 200, {0, 0.5f, 1.0f, 0.8f}, {15, 0, 0, 15});
-        sgfx::draw_image(GET_RESOURCE(selaura_icon_png), 100, 100, 200, 200);
+        //sgfx::draw_blur(0, 0, screen_size.x, screen_size.y, 10.f, 4);
+
         sgfx::end_frame();
 
         return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);

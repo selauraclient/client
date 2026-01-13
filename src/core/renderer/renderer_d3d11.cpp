@@ -1,5 +1,4 @@
 #include "renderer_d3d11.hpp"
-
 #include <shaders_vs.h>
 #include <shaders_ps.h>
 
@@ -13,22 +12,21 @@ namespace sgfx {
         swapchain->GetBuffer(0, IID_PPV_ARGS(bb.put()));
         device->CreateRenderTargetView(bb.get(), nullptr, rtv.put());
 
+        D3D11_TEXTURE2D_DESC bb_desc;
+        bb->GetDesc(&bb_desc);
+        screen_size = { (float)bb_desc.Width, (float)bb_desc.Height };
+        create_blur_resources(bb_desc);
+
         D3D11_RASTERIZER_DESC r_desc{};
         r_desc.FillMode = D3D11_FILL_SOLID;
         r_desc.CullMode = D3D11_CULL_NONE;
-        r_desc.ScissorEnable = FALSE;
         device->CreateRasterizerState(&r_desc, raster_scissor_off.put());
-
         r_desc.ScissorEnable = TRUE;
         device->CreateRasterizerState(&r_desc, raster_scissor_on.put());
 
         D3D11_SAMPLER_DESC s_desc{};
         s_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-        s_desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-        s_desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-        s_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-        s_desc.MipLODBias = -0.75f;
-        s_desc.MaxLOD = D3D11_FLOAT32_MAX;
+        s_desc.AddressU = s_desc.AddressV = s_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
         device->CreateSamplerState(&s_desc, sampler.put());
 
         D3D11_BLEND_DESC b_desc{};
@@ -44,90 +42,83 @@ namespace sgfx {
 
         D3D11_DEPTH_STENCIL_DESC ds_desc{};
         ds_desc.DepthEnable = FALSE;
-        ds_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-        ds_desc.DepthFunc = D3D11_COMPARISON_ALWAYS;
-        ds_desc.StencilEnable = FALSE;
         device->CreateDepthStencilState(&ds_desc, depth_disabled_state.put());
 
         D3D11_BUFFER_DESC cb_desc = { sizeof(DirectX::XMMATRIX), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE };
         device->CreateBuffer(&cb_desc, nullptr, constant_buffer.put());
 
         create_shader();
-
         return true;
+    }
+
+    void renderer_d3d11::create_blur_resources(const D3D11_TEXTURE2D_DESC& bb_desc) {
+        D3D11_TEXTURE2D_DESC desc = bb_desc;
+        desc.SampleDesc.Count = 1;
+        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+
+        for (int i = 0; i < 2; ++i) {
+            blur_textures[i] = nullptr; blur_srvs[i] = nullptr; blur_rtvs[i] = nullptr;
+            device->CreateTexture2D(&desc, nullptr, blur_textures[i].put());
+            device->CreateShaderResourceView(blur_textures[i].get(), nullptr, blur_srvs[i].put());
+            device->CreateRenderTargetView(blur_textures[i].get(), nullptr, blur_rtvs[i].put());
+        }
     }
 
     void renderer_d3d11::render(const draw_data& data) {
         if (data.vertices.empty()) return;
 
-        if (!v_buffer || v_capacity < data.vertices.size()) {
-            v_capacity = data.vertices.size();
-            if (v_capacity < 1024) v_capacity = 1024;
-            v_capacity *= 2;
+        if (data.display_size.x != screen_size.x || data.display_size.y != screen_size.y) {
+            winrt::com_ptr<ID3D11Texture2D> bb;
+            swapchain->GetBuffer(0, IID_PPV_ARGS(bb.put()));
+            D3D11_TEXTURE2D_DESC bb_desc;
+            bb->GetDesc(&bb_desc);
+            screen_size = data.display_size;
+            create_blur_resources(bb_desc);
+        }
 
-            D3D11_BUFFER_DESC v_desc = {
-                static_cast<UINT>(v_capacity * sizeof(vertex)),
-                D3D11_USAGE_DYNAMIC,
-                D3D11_BIND_VERTEX_BUFFER,
-                D3D11_CPU_ACCESS_WRITE
-            };
+        if (!v_buffer || v_capacity < data.vertices.size()) {
+            v_capacity = data.vertices.size() * 1.5;
+            D3D11_BUFFER_DESC v_desc = { (UINT)(v_capacity * sizeof(vertex)), D3D11_USAGE_DYNAMIC, D3D11_BIND_VERTEX_BUFFER, D3D11_CPU_ACCESS_WRITE };
             device->CreateBuffer(&v_desc, nullptr, v_buffer.put());
         }
 
         size_t needed_indices = (data.vertices.size() / 4) * 6;
         if (!i_buffer || i_capacity < needed_indices) {
-            i_capacity = needed_indices;
-            if (i_capacity < 1536) i_capacity = 1536;
-            i_capacity *= 2;
-
-            D3D11_BUFFER_DESC i_desc = {
-                static_cast<UINT>(i_capacity * sizeof(uint32_t)),
-                D3D11_USAGE_DYNAMIC,
-                D3D11_BIND_INDEX_BUFFER,
-                D3D11_CPU_ACCESS_WRITE
-            };
+            i_capacity = needed_indices * 1.5;
+            D3D11_BUFFER_DESC i_desc = { (UINT)(i_capacity * sizeof(uint32_t)), D3D11_USAGE_DYNAMIC, D3D11_BIND_INDEX_BUFFER, D3D11_CPU_ACCESS_WRITE };
             device->CreateBuffer(&i_desc, nullptr, i_buffer.put());
         }
 
-        D3D11_MAPPED_SUBRESOURCE mapped;
-        if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-            memcpy(mapped.pData, data.vertices.data(), data.vertices.size() * sizeof(vertex));
+        D3D11_MAPPED_SUBRESOURCE m;
+        if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) {
+            memcpy(m.pData, data.vertices.data(), data.vertices.size() * sizeof(vertex));
             ctx->Unmap(v_buffer.get(), 0);
         }
 
-        if (SUCCEEDED(ctx->Map(i_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-            uint32_t* indices = static_cast<uint32_t*>(mapped.pData);
+        if (SUCCEEDED(ctx->Map(i_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) {
+            uint32_t* idx = (uint32_t*)m.pData;
             for (uint32_t i = 0, v = 0; i < needed_indices; i += 6, v += 4) {
-                indices[i + 0] = v + 0; indices[i + 1] = v + 1; indices[i + 2] = v + 2;
-                indices[i + 3] = v + 0; indices[i + 4] = v + 2; indices[i + 5] = v + 3;
+                idx[i+0]=v+0; idx[i+1]=v+1; idx[i+2]=v+2; idx[i+3]=v+0; idx[i+4]=v+2; idx[i+5]=v+3;
             }
             ctx->Unmap(i_buffer.get(), 0);
         }
 
-        if (SUCCEEDED(ctx->Map(constant_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
-            DirectX::XMMATRIX projection = DirectX::XMMatrixOrthographicOffCenterLH(0, data.display_size.x, data.display_size.y, 0, 0, 1);
-            *static_cast<DirectX::XMMATRIX*>(mapped.pData) = DirectX::XMMatrixTranspose(projection);
+        if (SUCCEEDED(ctx->Map(constant_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) {
+            DirectX::XMMATRIX p = DirectX::XMMatrixOrthographicOffCenterLH(0, data.display_size.x, data.display_size.y, 0, 0, 1);
+            *static_cast<DirectX::XMMATRIX*>(m.pData) = DirectX::XMMatrixTranspose(p);
             ctx->Unmap(constant_buffer.get(), 0);
         }
 
-        D3D11_VIEWPORT vp = { 0.0f, 0.0f, data.display_size.x, data.display_size.y, 0.0f, 1.0f };
+        D3D11_VIEWPORT vp = { 0, 0, data.display_size.x, data.display_size.y, 0, 1 };
         ctx->RSSetViewports(1, &vp);
-
-        ID3D11RenderTargetView* rtvs[] = { rtv.get() };
-        ctx->OMSetRenderTargets(1, rtvs, nullptr);
-
-        float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
-        ctx->OMSetBlendState(blend_state.get(), blend_factor, 0xFFFFFFFF);
+        ID3D11RenderTargetView* main_rtv = rtv.get();
+        ctx->OMSetRenderTargets(1, &main_rtv, nullptr);
+        float bf[4] = {0,0,0,0};
+        ctx->OMSetBlendState(blend_state.get(), bf, 0xffffffff);
         ctx->OMSetDepthStencilState(depth_disabled_state.get(), 0);
-        ctx->RSSetState(raster_scissor_off.get());
-
-        ID3D11Buffer* vbs[] = { v_buffer.get() };
-        UINT strides[] = { sizeof(vertex) }, offsets[] = { 0 };
-        ctx->IASetVertexBuffers(0, 1, vbs, strides, offsets);
-        ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
         ctx->IASetInputLayout(layout.get());
         ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
         ctx->VSSetShader(vs.get(), nullptr, 0);
         ID3D11Buffer* cbs[] = { constant_buffer.get() };
         ctx->VSSetConstantBuffers(0, 1, cbs);
@@ -136,29 +127,83 @@ namespace sgfx {
         ID3D11SamplerState* samplers[] = { sampler.get() };
         ctx->PSSetSamplers(0, 1, samplers);
 
-        uint32_t index_offset = 0;
-        uint32_t base_vertex = 0;
+        uint32_t idx_off = 0;
+        uint32_t v_off = 0;
+
+        ID3D11Buffer* vbs[] = { v_buffer.get() };
+        UINT str[] = { sizeof(vertex) }, off[] = { 0 };
+        ctx->IASetVertexBuffers(0, 1, vbs, str, off);
+        ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
+
         for (const auto& cmd : data.commands) {
-            ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(cmd.texture);
-            ctx->PSSetShaderResources(0, 1, &srv);
+            if (cmd.is_blur) {
+                winrt::com_ptr<ID3D11Resource> back_res;
+                main_rtv->GetResource(back_res.put());
+                D3D11_TEXTURE2D_DESC bd;
+                static_cast<ID3D11Texture2D*>(back_res.get())->GetDesc(&bd);
 
-            if (cmd.clip_enabled) {
-                D3D11_RECT rect = {
-                    static_cast<LONG>(cmd.clip_rect.x),
-                    static_cast<LONG>(cmd.clip_rect.y),
-                    static_cast<LONG>(cmd.clip_rect.x + cmd.clip_rect.z),
-                    static_cast<LONG>(cmd.clip_rect.y + cmd.clip_rect.w)
-                };
-                ctx->RSSetState(raster_scissor_on.get());
-                ctx->RSSetScissorRects(1, &rect);
+                if (bd.SampleDesc.Count > 1) {
+                    ctx->ResolveSubresource(blur_textures[0].get(), 0, back_res.get(), 0, bd.Format);
+                } else {
+                    ctx->CopyResource(blur_textures[0].get(), back_res.get());
+                }
+
+                int last_dest = 0;
+                for (int i = 0; i < cmd.blur_iterations; ++i) {
+                    int s = i % 2;
+                    int d = (i + 1) % 2;
+                    last_dest = d;
+
+                    ID3D11RenderTargetView* t_rtv = blur_rtvs[d].get();
+                    ctx->OMSetRenderTargets(1, &t_rtv, nullptr);
+
+                    ID3D11ShaderResourceView* s_srv = blur_srvs[s].get();
+                    ctx->PSSetShaderResources(0, 1, &s_srv);
+
+                    vertex pass_verts[4];
+                    memcpy(pass_verts, &data.vertices[v_off / sizeof(vertex)], 4 * sizeof(vertex));
+                    for (int j = 0; j < 4; ++j) {
+                        pass_verts[j].data.z = (float)i * cmd.blur_intensity;
+                    }
+
+                    if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m))) {
+                        memcpy((uint8_t*)m.pData + v_off, pass_verts, 4 * sizeof(vertex));
+                        ctx->Unmap(v_buffer.get(), 0);
+                    }
+
+                    ctx->DrawIndexed(6, idx_off, 0);
+
+                    ID3D11ShaderResourceView* null_srv = nullptr;
+                    ctx->PSSetShaderResources(0, 1, &null_srv);
+                }
+
+                ctx->OMSetRenderTargets(1, &main_rtv, nullptr);
+                ID3D11ShaderResourceView* final_srv = blur_srvs[last_dest].get();
+                ctx->PSSetShaderResources(0, 1, &final_srv);
+
+                if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m))) {
+                    memcpy((uint8_t*)m.pData + v_off, &data.vertices[v_off/sizeof(vertex)], 4 * sizeof(vertex));
+                    ctx->Unmap(v_buffer.get(), 0);
+                }
+                ctx->DrawIndexed(6, idx_off, 0);
             } else {
-                ctx->RSSetState(raster_scissor_off.get());
+                ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(cmd.texture);
+                ctx->PSSetShaderResources(0, 1, &srv);
+                ID3D11Buffer* vbs[] = { v_buffer.get() };
+                UINT str[] = { sizeof(vertex) }, off[] = { 0 };
+                ctx->IASetVertexBuffers(0, 1, vbs, str, off);
+                ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
+
+                if (cmd.clip_enabled) {
+                    D3D11_RECT r = {(LONG)cmd.clip_rect.x, (LONG)cmd.clip_rect.y, (LONG)(cmd.clip_rect.x+cmd.clip_rect.z), (LONG)(cmd.clip_rect.y+cmd.clip_rect.w)};
+                    ctx->RSSetState(raster_scissor_on.get());
+                    ctx->RSSetScissorRects(1, &r);
+                } else ctx->RSSetState(raster_scissor_off.get());
+
+                ctx->DrawIndexed(cmd.count, idx_off, 0);
             }
-
-            uint32_t indices_to_draw = cmd.count;
-            ctx->DrawIndexed(indices_to_draw, index_offset, 0);
-
-            index_offset += indices_to_draw;
+            idx_off += cmd.count;
+            v_off += (cmd.count / 6) * 4 * sizeof(vertex);
         }
     }
 
@@ -169,44 +214,33 @@ namespace sgfx {
             ctx->ClearState();
             ctx->Flush();
         }
-        rtv = nullptr;
-        back_buffer = nullptr;
-        v_buffer = nullptr;
-        i_buffer = nullptr;
-        constant_buffer = nullptr;
+        rtv = nullptr; swapchain = nullptr; device = nullptr; ctx = nullptr;
+        v_buffer = nullptr; i_buffer = nullptr; constant_buffer = nullptr;
+        vs = nullptr; ps = nullptr; layout = nullptr; sampler = nullptr;
+        blend_state = nullptr; raster_scissor_off = nullptr; raster_scissor_on = nullptr;
+        depth_disabled_state = nullptr;
+        for(int i=0; i<2; ++i) { blur_textures[i] = nullptr; blur_srvs[i] = nullptr; blur_rtvs[i] = nullptr; }
     }
 
     void renderer_d3d11::create_texture(void* data, int width, int height, void** out_srv) {
         D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = width;
-        desc.Height = height;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_IMMUTABLE;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-
+        desc.Width = width; desc.Height = height; desc.MipLevels = 1; desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_IMMUTABLE; desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         D3D11_SUBRESOURCE_DATA sub{};
-        sub.pSysMem = data;
-        sub.SysMemPitch = width * 4;
-
+        sub.pSysMem = data; sub.SysMemPitch = width * 4;
         winrt::com_ptr<ID3D11Texture2D> tex;
         device->CreateTexture2D(&desc, &sub, tex.put());
         device->CreateShaderResourceView(tex.get(), nullptr, reinterpret_cast<ID3D11ShaderResourceView**>(out_srv));
     }
 
     void renderer_d3d11::destroy_texture(texture_id handle) {
-        if (handle) {
-            auto srv = static_cast<ID3D11ShaderResourceView*>(handle);
-            srv->Release();
-        }
+        if (handle) static_cast<IUnknown*>(handle)->Release();
     }
 
     void renderer_d3d11::create_shader() {
         device->CreateVertexShader(g_shaders_vs, sizeof(g_shaders_vs), nullptr, vs.put());
         device->CreatePixelShader(g_shaders_ps, sizeof(g_shaders_ps), nullptr, ps.put());
-
         D3D11_INPUT_ELEMENT_DESC layout_desc[] = {
             {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, offsetof(vertex, pos),   D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(vertex, col),   D3D11_INPUT_PER_VERTEX_DATA, 0},
