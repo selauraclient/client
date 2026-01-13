@@ -42,6 +42,13 @@ namespace sgfx {
         winrt::com_ptr<ID3D11ShaderResourceView> blur_srvs[2];
         winrt::com_ptr<ID3D11RenderTargetView> blur_rtvs[2];
 
+        struct blur_params {
+            float offset;
+            float padding[3];
+        };
+
+        winrt::com_ptr<ID3D11Buffer> blur_cb;
+
         size_t v_capacity = 0;
         size_t i_capacity = 0;
         glm::vec2 screen_size = { 0, 0 };

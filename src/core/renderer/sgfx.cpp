@@ -84,15 +84,25 @@ namespace sgfx {
         }
     }
 
+    glm::vec4 normalize_col(glm::vec4 col) {
+        if (col.r > 1.0f || col.g > 1.0f || col.b > 1.0f) {
+            return { col.r / 255.0f, col.g / 255.0f, col.b / 255.0f, col.a };
+        }
+        return col;
+    }
+
     void draw_rect(float x, float y, float w, float h, glm::vec4 col, glm::vec4 radii) {
         auto& ctx = get_context();
         ctx.current_texture = nullptr;
         ctx.add_command_if_needed();
+
+        glm::vec4 final_col = normalize_col(col);
         glm::vec4 p = { w, h, 0.0f, 0.0f };
-        ctx.data.vertices.push_back({{x, y, 0}, col, {0, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y, 0}, col, {1, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y+h, 0}, col, {1, 1}, p, radii});
-        ctx.data.vertices.push_back({{x, y+h, 0}, col, {0, 1}, p, radii});
+
+        ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
+        ctx.data.vertices.push_back({{x, y+h, 0}, final_col, {0, 1}, p, radii});
         ctx.data.commands.back().count += 6;
     }
 
@@ -100,11 +110,14 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = tex;
         ctx.add_command_if_needed();
+
+        glm::vec4 final_col = normalize_col(col);
         glm::vec4 p = { w, h, 0.0f, 2.0f };
-        ctx.data.vertices.push_back({{x, y, 0}, col, {0, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y, 0}, col, {1, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y+h, 0}, col, {1, 1}, p, radii});
-        ctx.data.vertices.push_back({{x, y+h, 0}, col, {0, 1}, p, radii});
+
+        ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
+        ctx.data.vertices.push_back({{x, y+h, 0}, final_col, {0, 1}, p, radii});
         ctx.data.commands.back().count += 6;
     }
 

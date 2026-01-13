@@ -39,7 +39,18 @@ struct selaura::detour<&IDXGISwapChain::Present> {
         auto screen_size = sgfx::get_context().backend->get_screen_size();
         sgfx::begin_frame(screen_size.x, screen_size.y);
         sgfx::set_font(GET_RESOURCE(Poppins_msdf_png), GET_RESOURCE(Poppins_msdf_json), false);
-        //sgfx::draw_blur(0, 0, screen_size.x, screen_size.y, 10.f, 4);
+        sgfx::draw_blur(0, 0, screen_size.x, screen_size.y, 2.f, 4);
+
+        auto menu_width = screen_size.x * 0.55;
+        auto menu_height = screen_size.y * 0.65;
+
+        auto menu_x = (screen_size.x - menu_width) / 2;
+        auto menu_y = (screen_size.y - menu_height) / 2;
+
+        auto sidebar_width = menu_width * 0.27;
+
+        sgfx::draw_rect(menu_x, menu_y, menu_width, menu_height, {34, 34, 34, 1.f}, {15, 15, 15, 15});
+        sgfx::draw_rect(menu_x, menu_y, sidebar_width, menu_height, {24, 24, 24, 1.f}, {15, 0, 0, 15});
 
         sgfx::end_frame();
 

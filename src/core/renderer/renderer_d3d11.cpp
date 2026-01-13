@@ -47,6 +47,9 @@ namespace sgfx {
         D3D11_BUFFER_DESC cb_desc = { sizeof(DirectX::XMMATRIX), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE };
         device->CreateBuffer(&cb_desc, nullptr, constant_buffer.put());
 
+        D3D11_BUFFER_DESC bcb_desc = { sizeof(blur_params), D3D11_USAGE_DYNAMIC, D3D11_BIND_CONSTANT_BUFFER, D3D11_CPU_ACCESS_WRITE };
+        device->CreateBuffer(&bcb_desc, nullptr, blur_cb.put());
+
         create_shader();
         return true;
     }
@@ -98,7 +101,7 @@ namespace sgfx {
 
         if (SUCCEEDED(ctx->Map(i_buffer.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &m))) {
             uint32_t* idx = (uint32_t*)m.pData;
-            for (uint32_t i = 0, v = 0; i < needed_indices; i += 6, v += 4) {
+            for (uint32_t i = 0, v = 0; i < (uint32_t)needed_indices; i += 6, v += 4) {
                 idx[i+0]=v+0; idx[i+1]=v+1; idx[i+2]=v+2; idx[i+3]=v+0; idx[i+4]=v+2; idx[i+5]=v+3;
             }
             ctx->Unmap(i_buffer.get(), 0);
@@ -114,11 +117,18 @@ namespace sgfx {
         ctx->RSSetViewports(1, &vp);
         ID3D11RenderTargetView* main_rtv = rtv.get();
         ctx->OMSetRenderTargets(1, &main_rtv, nullptr);
+
         float bf[4] = {0,0,0,0};
         ctx->OMSetBlendState(blend_state.get(), bf, 0xffffffff);
         ctx->OMSetDepthStencilState(depth_disabled_state.get(), 0);
         ctx->IASetInputLayout(layout.get());
         ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        ID3D11Buffer* vbs[] = { v_buffer.get() };
+        UINT str[] = { sizeof(vertex) }, off[] = { 0 };
+        ctx->IASetVertexBuffers(0, 1, vbs, str, off);
+        ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
+
         ctx->VSSetShader(vs.get(), nullptr, 0);
         ID3D11Buffer* cbs[] = { constant_buffer.get() };
         ctx->VSSetConstantBuffers(0, 1, cbs);
@@ -129,11 +139,6 @@ namespace sgfx {
 
         uint32_t idx_off = 0;
         uint32_t v_off = 0;
-
-        ID3D11Buffer* vbs[] = { v_buffer.get() };
-        UINT str[] = { sizeof(vertex) }, off[] = { 0 };
-        ctx->IASetVertexBuffers(0, 1, vbs, str, off);
-        ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
 
         for (const auto& cmd : data.commands) {
             if (cmd.is_blur) {
@@ -160,16 +165,14 @@ namespace sgfx {
                     ID3D11ShaderResourceView* s_srv = blur_srvs[s].get();
                     ctx->PSSetShaderResources(0, 1, &s_srv);
 
-                    vertex pass_verts[4];
-                    memcpy(pass_verts, &data.vertices[v_off / sizeof(vertex)], 4 * sizeof(vertex));
-                    for (int j = 0; j < 4; ++j) {
-                        pass_verts[j].data.z = (float)i * cmd.blur_intensity;
+                    D3D11_MAPPED_SUBRESOURCE bm;
+                    if (SUCCEEDED(ctx->Map(blur_cb.get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &bm))) {
+                        blur_params* p = (blur_params*)bm.pData;
+                        p->offset = (float)i * cmd.blur_intensity;
+                        ctx->Unmap(blur_cb.get(), 0);
                     }
-
-                    if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m))) {
-                        memcpy((uint8_t*)m.pData + v_off, pass_verts, 4 * sizeof(vertex));
-                        ctx->Unmap(v_buffer.get(), 0);
-                    }
+                    ID3D11Buffer* pbcb = blur_cb.get();
+                    ctx->PSSetConstantBuffers(1, 1, &pbcb);
 
                     ctx->DrawIndexed(6, idx_off, 0);
 
@@ -178,27 +181,22 @@ namespace sgfx {
                 }
 
                 ctx->OMSetRenderTargets(1, &main_rtv, nullptr);
+
                 ID3D11ShaderResourceView* final_srv = blur_srvs[last_dest].get();
                 ctx->PSSetShaderResources(0, 1, &final_srv);
 
-                if (SUCCEEDED(ctx->Map(v_buffer.get(), 0, D3D11_MAP_WRITE_NO_OVERWRITE, 0, &m))) {
-                    memcpy((uint8_t*)m.pData + v_off, &data.vertices[v_off/sizeof(vertex)], 4 * sizeof(vertex));
-                    ctx->Unmap(v_buffer.get(), 0);
-                }
                 ctx->DrawIndexed(6, idx_off, 0);
             } else {
                 ID3D11ShaderResourceView* srv = static_cast<ID3D11ShaderResourceView*>(cmd.texture);
                 ctx->PSSetShaderResources(0, 1, &srv);
-                ID3D11Buffer* vbs[] = { v_buffer.get() };
-                UINT str[] = { sizeof(vertex) }, off[] = { 0 };
-                ctx->IASetVertexBuffers(0, 1, vbs, str, off);
-                ctx->IASetIndexBuffer(i_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
 
                 if (cmd.clip_enabled) {
                     D3D11_RECT r = {(LONG)cmd.clip_rect.x, (LONG)cmd.clip_rect.y, (LONG)(cmd.clip_rect.x+cmd.clip_rect.z), (LONG)(cmd.clip_rect.y+cmd.clip_rect.w)};
                     ctx->RSSetState(raster_scissor_on.get());
                     ctx->RSSetScissorRects(1, &r);
-                } else ctx->RSSetState(raster_scissor_off.get());
+                } else {
+                    ctx->RSSetState(raster_scissor_off.get());
+                }
 
                 ctx->DrawIndexed(cmd.count, idx_off, 0);
             }
@@ -215,7 +213,7 @@ namespace sgfx {
             ctx->Flush();
         }
         rtv = nullptr; swapchain = nullptr; device = nullptr; ctx = nullptr;
-        v_buffer = nullptr; i_buffer = nullptr; constant_buffer = nullptr;
+        v_buffer = nullptr; i_buffer = nullptr; constant_buffer = nullptr; blur_cb = nullptr;
         vs = nullptr; ps = nullptr; layout = nullptr; sampler = nullptr;
         blend_state = nullptr; raster_scissor_off = nullptr; raster_scissor_on = nullptr;
         depth_disabled_state = nullptr;

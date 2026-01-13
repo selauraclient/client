@@ -77,6 +77,7 @@ namespace sgfx {
     void set_clip(float x, float y, float w, float h);
     void reset_clip();
 
+    glm::vec4 normalize_col(glm::vec4 col);
     void draw_rect(float x, float y, float w, float h, glm::vec4 col, glm::vec4 radii = {0,0,0,0});
     void draw_rect_textured(float x, float y, float w, float h, texture_id tex, glm::vec4 col = {1,1,1,1}, glm::vec4 radii = {0,0,0,0});
     void draw_blur(float x, float y, float w, float h, float intensity, int iterations, glm::vec4 radii = {0,0,0,0});

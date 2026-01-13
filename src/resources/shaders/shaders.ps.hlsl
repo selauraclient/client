@@ -9,6 +9,11 @@ struct PS_INPUT {
 Texture2D tex : register(t0);
 SamplerState smp : register(s0);
 
+cbuffer blur_buffer : register(b1) {
+    float blur_offset;
+    float3 blur_padding;
+};
+
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
 }
@@ -27,19 +32,27 @@ float4 main(PS_INPUT input) : SV_TARGET {
         float2 tex_dim;
         tex.GetDimensions(tex_dim.x, tex_dim.y);
         float2 texel = 1.0 / tex_dim;
-        float offset = input.data.z + 0.5;
 
-        float4 sum = 0;
-        sum += tex.Sample(smp, input.uv + float2(offset, offset) * texel);
-        sum += tex.Sample(smp, input.uv + float2(-offset, offset) * texel);
-        sum += tex.Sample(smp, input.uv + float2(-offset, -offset) * texel);
-        sum += tex.Sample(smp, input.uv + float2(offset, -offset) * texel);
-        float4 blurred = sum * 0.25;
+        float2 half_texel = texel * 0.5;
+        float offset = blur_offset;
+
+        float4 sum = tex.Sample(smp, input.uv) * 4.0;
+        sum += tex.Sample(smp, input.uv + float2(-texel.x, -texel.y) * offset);
+        sum += tex.Sample(smp, input.uv + float2( texel.x, -texel.y) * offset);
+        sum += tex.Sample(smp, input.uv + float2(-texel.x,  texel.y) * offset);
+        sum += tex.Sample(smp, input.uv + float2( texel.x,  texel.y) * offset);
+
+        sum += tex.Sample(smp, input.uv + float2(-texel.x, 0.0) * offset) * 2.0;
+        sum += tex.Sample(smp, input.uv + float2( texel.x, 0.0) * offset) * 2.0;
+        sum += tex.Sample(smp, input.uv + float2(0.0, -texel.y) * offset) * 2.0;
+        sum += tex.Sample(smp, input.uv + float2(0.0,  texel.y) * offset) * 2.0;
+
+        float4 blurred = sum / 16.0;
 
         float2 p = (input.uv - 0.5) * size;
         float d = sd_rounded_box(p, size * 0.5, input.radii);
 
-        float soft_edge = fwidth(d) + (input.data.z * 0.5);
+        float soft_edge = fwidth(d);
         float alpha = smoothstep(soft_edge, -soft_edge, d);
 
         return float4(blurred.rgb, blurred.a * alpha * input.col.a);
@@ -70,26 +83,4 @@ float4 main(PS_INPUT input) : SV_TARGET {
 
     if (alpha <= 0.001) discard;
     return float4(input.col.rgb, input.col.a * alpha);
-}
-
-cbuffer projection : register(b0) {
-    matrix mat;
-};
-
-struct VS_INPUT {
-    float3 pos : POSITION;
-    float4 col : COLOR;
-    float2 uv : TEXCOORD;
-    float4 data : DATA;
-    float4 radii : RADII;
-};
-
-PS_INPUT vs_main(VS_INPUT input) {
-    PS_INPUT output;
-    output.pos = mul(float4(input.pos, 1.0f), mat);
-    output.col = input.col;
-    output.uv = input.uv;
-    output.data = input.data;
-    output.radii = input.radii;
-    return output;
 }
