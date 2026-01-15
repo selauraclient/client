@@ -53,11 +53,9 @@ struct selaura::detour<&IGameInputReading::GetMouseState> {
 
         if (input_manager.is_input_cancelled()) {
             state->buttons = GameInputMouseNone;
-
-            state->absolutePositionX = input_manager.get_last_mouse_pos().x;
-            state->absolutePositionY = input_manager.get_last_mouse_pos().y;
             state->positionX = 0;
             state->positionY = 0;
+
             state->wheelX = 0;
             state->wheelY = 0;
         }

@@ -11,6 +11,8 @@ struct selaura::detour<&MinecraftGame::_update> {
         selaura::mcgame_update ev{};
         selaura::get<selaura::event_manager>().dispatch(ev);
 
+        selaura::mc = thisptr;
+
         return selaura::hook<&MinecraftGame::_update>::call(thisptr);
     }
 };

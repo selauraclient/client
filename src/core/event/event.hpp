@@ -9,9 +9,19 @@ namespace selaura {
 
     struct mcgame_update final : event {};
     struct render_event final : event {
-        IDXGISwapChain* swapChain;
-        float screenWidth;
-        float screenHeight;
+        IDXGISwapChain* swap_chain;
+        float screen_width;
+        float screen_height;
         float fps;
+    };
+
+    struct input_event final : event {
+        glm::vec2 mouse_pos;
+
+        std::bitset<256> keys_curr;
+        std::bitset<256> keys_prev;
+
+        glm::vec2 mouse_delta;
+        int32_t scroll_wheel_delta;
     };
 };

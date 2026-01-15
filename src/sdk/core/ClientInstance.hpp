@@ -8,4 +8,7 @@ public:
     LocalPlayer* getLocalPlayer() {
         return hat::member_at<LocalPlayer*>(this, 0x1F);
     }
+
+    MCAPI void grabCursor();
+    MCAPI void releaseCursor();
 };

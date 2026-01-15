@@ -9,3 +9,5 @@ EXPORTS
     ?isDeviceRemoved@RendererContextD3D11@d3d11@bgfx@@QEAA_NXZ @7 NONAME
     ?isDeviceRemoved@RendererContextD3D12@d3d12@bgfx@@QEAA_NXZ @8 NONAME
     ?_update@MinecraftGame@@QEAAXXZ @9 NONAME
+    ?grabCursor@ClientInstance@@QEAAXXZ @10 NONAME
+    ?releaseCursor@ClientInstance@@QEAAXXZ @11 NONAME

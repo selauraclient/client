@@ -164,6 +164,8 @@ add_library(Selaura SHARED
         core/service/console.cpp
         core/service/notification_manager.cpp
         core/service/input_manager.cpp
+        core/screen/screen.cpp
+        core/screen/screens/clickgui.cpp
         ${EMBEDDED_RESOURCES}
         ${SHADER_HEADERS}
 )

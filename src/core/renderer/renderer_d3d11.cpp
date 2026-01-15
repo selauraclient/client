@@ -248,4 +248,8 @@ namespace sgfx {
         };
         device->CreateInputLayout(layout_desc, 5, g_shaders_vs, sizeof(g_shaders_vs), layout.put());
     }
+
+    void* renderer_d3d11::get_device() {
+        return this->device.get();
+    }
 }

@@ -10,4 +10,8 @@ namespace sgfx {
             desc.BufferDesc.Height,
         };
     }
+
+    void* renderer_d3d::get_swapchain() {
+        return this->swapchain.get();
+    }
 }

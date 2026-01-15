@@ -5,8 +5,10 @@
 #include <winrt/base.h>
 #include <DirectXMath.h>
 
+#include "renderer_d3d.hpp"
+
 namespace sgfx {
-    class renderer_d3d11 : public backend_interface {
+    class renderer_d3d11 : public renderer_d3d {
     public:
         bool init(void* native_swapchain) override;
         void shutdown() override;
@@ -16,10 +18,11 @@ namespace sgfx {
         void create_shader() override;
         glm::vec2 get_screen_size() const override { return screen_size; }
 
+        void* get_device() override;
+
     private:
         void create_blur_resources(const D3D11_TEXTURE2D_DESC& bb_desc);
 
-        winrt::com_ptr<IDXGISwapChain3> swapchain;
         winrt::com_ptr<ID3D11Device> device;
         winrt::com_ptr<ID3D11DeviceContext> ctx;
         winrt::com_ptr<ID3D11RenderTargetView> rtv;

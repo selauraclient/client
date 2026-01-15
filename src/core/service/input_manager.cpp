@@ -1,8 +1,12 @@
 #include "input_manager.hpp"
 
+#include "core/service_manager.hpp"
+#include "core/event/event.hpp"
+#include "core/event/event_manager.hpp"
+
 namespace selaura {
     void input_manager::update(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-        uint32_t vk = static_cast<uint32_t>(wParam);
+        auto vk = static_cast<uint32_t>(wParam);
 
         if (vk == VK_SHIFT) {
             uint32_t scancode = (lParam & 0x00ff0000) >> 16;
@@ -23,54 +27,45 @@ namespace selaura {
         else if (uMsg == WM_KEYUP || uMsg == WM_SYSKEYUP) {
             keys_curr.set(vk, false);
         }
+
+        selaura::input_event ev{};
+        ev.keys_curr = this->keys_curr;
+        ev.keys_prev = this->keys_prev;
+
+        selaura::get<selaura::event_manager>().dispatch(ev);
     }
 
     void input_manager::update(GameInputMouseState state) {
-        bool has_movement = (state.positionX != 0 || state.positionY != 0);
-        bool has_abs_pos = (state.absolutePositionX != 0 || state.absolutePositionY != 0);
-        bool has_buttons = (state.buttons != GameInputMouseButtons::GameInputMouseNone);
+        glm::vec2 current_abs_pos = { (float)state.absolutePositionX, (float)state.absolutePositionY };
 
-        if (has_movement || has_abs_pos || has_buttons) {
-            bool now_cancelled = this->cancel_input;
-
-            if (now_cancelled != was_cancelled) {
-                this->mouse_pos = {
-                    state.absolutePositionX,
-                    state.absolutePositionY
-                };
-
-                this->last_mouse_pos = this->mouse_pos;
-                this->mouse_delta = { 0.f, 0.f };
-                this->scroll_wheel_delta = 0;
-
-                previous_buttons = current_buttons;
-                was_cancelled = now_cancelled;
-                return;
-            }
-
-            if (now_cancelled) {
-                this->mouse_delta = { 0.f, 0.f };
-                this->scroll_wheel_delta = 0;
-                return;
-            }
-
-            previous_buttons = current_buttons;
-            current_buttons = state.buttons;
-
-            this->mouse_pos = {
-                state.absolutePositionX,
-                state.absolutePositionY
-            };
-
-            this->last_mouse_pos = this->mouse_pos;
-
-            this->mouse_delta = {
-                state.positionX,
-                state.positionY
-            };
-
-            this->scroll_wheel_delta = state.wheelY;
+        if (!this->cancel_input && was_cancelled) {
+            this->last_mouse_pos = current_abs_pos;
+            this->mouse_pos = current_abs_pos;
+            this->mouse_delta = { 0.f, 0.f };
+            was_cancelled = false;
         }
+
+        if (this->cancel_input) {
+            this->last_mouse_pos = current_abs_pos;
+            this->mouse_delta = { 0.f, 0.f };
+            this->scroll_wheel_delta = 0;
+            was_cancelled = true;
+        } else {
+            this->mouse_delta = current_abs_pos - this->last_mouse_pos;
+            this->mouse_pos = current_abs_pos;
+            this->scroll_wheel_delta = state.wheelY;
+            this->last_mouse_pos = current_abs_pos;
+            was_cancelled = false;
+        }
+
+        previous_buttons = current_buttons;
+        current_buttons = state.buttons;
+
+        selaura::input_event ev{};
+        ev.mouse_pos = this->mouse_pos;
+        ev.mouse_delta = this->mouse_delta;
+        ev.scroll_wheel_delta = this->scroll_wheel_delta;
+        selaura::get<selaura::event_manager>().dispatch(ev);
     }
 
 

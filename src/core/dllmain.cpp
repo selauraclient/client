@@ -3,6 +3,7 @@
 #include <core/service_manager.hpp>
 //#include <core/renderer/sui.hpp>
 #include <core/service/console_sink.hpp>
+#include <core/screen/screen_manager.hpp>
 #include <memory/cleanup.hpp>
 #include <memory/hook.hpp>
 #include <memory/delayloader/delayloader.hpp>
@@ -55,12 +56,34 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     spdlog::debug("Hooks created in {:.0f}ms", hook_timer.elapsed().count() * 1000);
     spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
 
-    //selaura::get<selaura::event_manager>().subscribe(&drawMenu);
-    //selaura::get<selaura::event_manager>().subscribe(&drawFps);
-
     GameInput::v2::IGameInput* game_input = nullptr;
     if (FAILED(GameInput::v2::GameInputCreate(&game_input))) spdlog::info("No GameInput");
     selaura::hook<&GameInput::v2::IGameInput::GetCurrentReading>::enable(game_input, 4);
+
+    selaura::get<selaura::event_manager>().subscribe<selaura::input_event>([&](auto& ev) {
+        static bool cancel_next = false;
+        auto& ipm = selaura::get<selaura::input_manager>();
+        bool any_screen_open = false;
+
+        selaura::get<selaura::screen_manager>().for_each([&](auto& screen) {
+            if (ipm.is_key_pressed(screen.get_key())) {
+                static ClientInstance* ci = nullptr;
+                if (ci == nullptr) ci = selaura::mc->getPrimaryClientInstance().get();
+                ci->releaseCursor();
+                screen.set_enabled(true);
+            }
+
+            if (ipm.is_key_pressed(VK_ESCAPE) && screen.get_enabled()) {
+                screen.set_enabled(false);
+                cancel_next = true;
+            }
+
+            if (screen.get_enabled()) any_screen_open = true;
+        });
+
+        ipm.set_input_cancelled(cancel_next);
+        cancel_next = any_screen_open;
+    });
 
     const int target_ms = 5000;
     const int interval_ms = 100;

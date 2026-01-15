@@ -50,6 +50,9 @@ namespace sgfx {
         virtual void destroy_texture(texture_id handle) = 0;
         virtual void create_shader() = 0;
         [[nodiscard]] virtual glm::vec2 get_screen_size() const = 0;
+
+        virtual void* get_device() = 0;
+        virtual void* get_swapchain() = 0;
     };
 
     struct context {

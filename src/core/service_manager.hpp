@@ -4,8 +4,10 @@
 #include <core/event/event_manager.hpp>
 #include <core/service/console.hpp>
 #include <core/service/notification_manager.hpp>
-//#include <core/renderer/renderer.hpp>
 #include <core/service/input_manager.hpp>
+#include <core/screen/screen_manager.hpp>
+
+#include <sdk/core/MinecraftGame.hpp>
 
 namespace selaura {
     struct service_manager_impl {
@@ -13,8 +15,9 @@ namespace selaura {
             event_manager,
             console,
             notification_manager,
-            //renderer,
-            input_manager
+            input_manager,
+
+            screen_manager
         >;
 
         template <typename T>
@@ -26,6 +29,7 @@ namespace selaura {
     };
 
     inline std::unique_ptr<selaura::service_manager_impl> service_manager;
+    inline MinecraftGame* mc;
 
     template <typename T>
     constexpr auto& get() {

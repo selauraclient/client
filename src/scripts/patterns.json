@@ -35,5 +35,13 @@
 		"symbol": "?_update@MinecraftGame@@QEAAXXZ",
 		"signature": "E8 ? ? ? ? 48 8B 8E ? ? ? ? BA ? ? ? ? E8 ? ? ? ? 48 8B BE",
 		"deref": 1
+	},
+	{
+		"symbol": "?grabCursor@ClientInstance@@QEAAXXZ",
+		"signature": "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B 8B ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ? 48 83 C4 ? 5B 48 FF 25 ? ? ? ? 48 83 C4 ? 5B C3 40 53"
+	},
+	{
+		"symbol": "?releaseCursor@ClientInstance@@QEAAXXZ",
+		"signature": "40 53 48 83 EC ? 48 8B 01 48 8B D9 48 8B 80 ? ? ? ? FF 15 ? ? ? ? 84 C0 74 ? 48 8B 8B ? ? ? ? 48 8B 01 48 8B 80 ? ? ? ? 48 83 C4 ? 5B 48 FF 25 ? ? ? ? 48 83 C4 ? 5B C3 48 89 5C 24"
 	}
 ]
