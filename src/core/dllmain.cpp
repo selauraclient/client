@@ -60,6 +60,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::hook<&MinecraftGame::_update>::enable();
     selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::enable();
     selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::enable();
+    selaura::hook<&ClientInstance::grabCursor>::enable();
 
 
     GameInput::v2::IGameInput* game_input = nullptr;
@@ -77,40 +78,26 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
 
     Sleep(500);
 
+    auto& scrn = selaura::get<selaura::screen_manager>();
     selaura::get<selaura::event_manager>().subscribe<selaura::input_event>([&](auto& ev) {
-        static bool cancel_next = false;
-        bool any_screen_open = false;
-
-        static ClientInstance* ci = nullptr;
-        if (ci == nullptr) {
-            ci = selaura::mc->getPrimaryClientInstance().get();
-        }
-
-        selaura::get<selaura::screen_manager>().for_each([&](auto& screen) {
+         scrn.for_each([&](auto& screen) {
+            using screen_t = std::remove_cvref_t<decltype(screen)>;
             if (ev.keys_curr.test(screen.get_key())) {
-                ci->releaseCursor();
-                screen.set_enabled(true);
+                scrn.enable_screen<screen_t>();
             }
 
             if (ev.keys_curr.test(VK_ESCAPE) && screen.get_enabled()) {
-                ci->grabCursor();
-                screen.set_enabled(false);
-
+                scrn.disable_screen<screen_t>();
                 ev.cancelled = true;
-                cancel_next = true;
             }
-
-            if (screen.get_enabled()) any_screen_open = true;
         });
 
-        if (any_screen_open || ev.cancelled) {
-            ev.cancelled = true;
-        }
+        if (scrn.any_screens_enabled()) ev.cancelled = true;
+    });
 
-        cancel_next = any_screen_open;
-
-        if (any_screen_open) {
-            ci->releaseCursor();
+    selaura::get<selaura::event_manager>().subscribe<selaura::mcgame_update>([&](auto& ev) {
+        if (scrn.any_screens_enabled()) {
+            ev.mc->getPrimaryClientInstance()->releaseCursor();
         }
     });
 

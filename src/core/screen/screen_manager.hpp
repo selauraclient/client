@@ -13,8 +13,22 @@ namespace selaura {
             screen.set_enabled(true);
         }
 
+        template <typename T>
+        void disable_screen() {
+            auto& screen = std::get<T>(screens);
+
+            active_screen = std::nullopt;
+            screen.set_enabled(false);
+        }
+
         auto& get_active_screen()  {
             return active_screen;
+        }
+
+        bool any_screens_enabled() {
+            return std::apply([](auto&... screen_args) {
+                return (screen_args.get_enabled() || ...);
+            }, screens);
         }
 
         template <typename F>

@@ -1,13 +1,18 @@
 #pragma once
 #include <pch.hpp>
 
+#include <sdk/core/MinecraftGame.hpp>
+
 namespace selaura {
     struct event {
         virtual ~event() = default;
         bool cancelled = false;
     };
 
-    struct mcgame_update final : event {};
+    struct mcgame_update final : event {
+        MinecraftGame* mc;
+    };
+
     struct render_event final : event {
         IDXGISwapChain* swap_chain;
         float screen_width;
