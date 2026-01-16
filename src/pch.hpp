@@ -11,6 +11,10 @@
 #include <dwmapi.h>
 #include <Psapi.h>
 #include <shlobj_core.h>
+#include <shlwapi.h>
+#include <unknwn.h>
+#include <objbase.h>
+#include <gdiplus.h>
 #include <winrt/base.h>
 
 #include <d3d11.h>
@@ -27,6 +31,7 @@
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <print>
 #include <shared_mutex>
 #include <span>
 #include <string>

@@ -8,10 +8,10 @@
 template <>
 struct selaura::detour<&MinecraftGame::_update> {
     static void hk(MinecraftGame* thisptr) {
+        selaura::mc = thisptr;
+
         selaura::mcgame_update ev{};
         selaura::get<selaura::event_manager>().dispatch(ev);
-
-        selaura::mc = thisptr;
 
         return selaura::hook<&MinecraftGame::_update>::call(thisptr);
     }

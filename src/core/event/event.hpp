@@ -17,11 +17,13 @@ namespace selaura {
 
     struct input_event final : event {
         glm::vec2 mouse_pos;
-
         std::bitset<256> keys_curr;
         std::bitset<256> keys_prev;
-
         glm::vec2 mouse_delta;
         int32_t scroll_wheel_delta;
+
+        uint32_t key;
+        bool is_down;
+        bool is_game_input;
     };
 };

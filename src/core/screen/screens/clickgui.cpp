@@ -11,16 +11,10 @@ namespace selaura {
 
     void clickgui::on_enable() {
         selaura::get<selaura::event_manager>().subscribe(this, &clickgui::on_render);
-        selaura::get<selaura::event_manager>().subscribe(this, &clickgui::on_input);
     }
 
     void clickgui::on_disable() {
         selaura::get<selaura::event_manager>().unsubscribe(this, &clickgui::on_render);
-        selaura::get<selaura::event_manager>().unsubscribe(this, &clickgui::on_input);
-
-        static ClientInstance* ci = nullptr;
-        if (ci == nullptr) ci = selaura::mc->getPrimaryClientInstance().get();
-        ci->grabCursor();
     }
 
     void clickgui::on_render(render_event& ev) {
@@ -39,8 +33,5 @@ namespace selaura {
     }
 
     void clickgui::on_input(input_event& ev) {
-        static ClientInstance* ci = nullptr;
-        if (ci == nullptr) ci = selaura::mc->getPrimaryClientInstance().get();
-        ci->releaseCursor();
     }
 };

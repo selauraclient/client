@@ -15,9 +15,17 @@
 #include <sdk/core/MinecraftGame.hpp>
 #include <sdk/renderer/bgfx.hpp>
 
+#include "win_utils.hpp"
+
+LOAD_RESOURCE(selaura_icon_png)
+
 void EjectAndExit(HMODULE hModule) {
     spdlog::info("Ejecting Selaura...");
-    selaura::remove_wndproc(FindWindowA("Bedrock", nullptr));
+
+    auto hwnd = FindWindowA("Bedrock", nullptr);
+    selaura::remove_wndproc(hwnd);
+    win_utils::restore_original_state(hwnd);
+
     selaura::detail::run_cleanup();
 
     Sleep(100);
@@ -52,37 +60,58 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::hook<&MinecraftGame::_update>::enable();
     selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::enable();
     selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::enable();
-    selaura::init_wndproc(FindWindowA("Bedrock", nullptr));
-    spdlog::debug("Hooks created in {:.0f}ms", hook_timer.elapsed().count() * 1000);
-    spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
+
 
     GameInput::v2::IGameInput* game_input = nullptr;
     if (FAILED(GameInput::v2::GameInputCreate(&game_input))) spdlog::info("No GameInput");
     selaura::hook<&GameInput::v2::IGameInput::GetCurrentReading>::enable(game_input, 4);
 
+    auto hwnd = FindWindowA("Bedrock", nullptr);
+    selaura::init_wndproc(hwnd);
+
+    win_utils::set_window_icon(hwnd, GET_RESOURCE(selaura_icon_png));
+    win_utils::set_window_title(hwnd, fmt::format("Selaura Client ({})", win_utils::get_formatted_version()));
+
+    spdlog::debug("Hooks created in {:.0f}ms", hook_timer.elapsed().count() * 1000);
+    spdlog::debug("Injection completed in {:.0f}ms", inject_timer.elapsed().count() * 1000);
+
+    Sleep(500);
+
     selaura::get<selaura::event_manager>().subscribe<selaura::input_event>([&](auto& ev) {
         static bool cancel_next = false;
-        auto& ipm = selaura::get<selaura::input_manager>();
         bool any_screen_open = false;
 
+        static ClientInstance* ci = nullptr;
+        if (ci == nullptr) {
+            ci = selaura::mc->getPrimaryClientInstance().get();
+        }
+
         selaura::get<selaura::screen_manager>().for_each([&](auto& screen) {
-            if (ipm.is_key_pressed(screen.get_key())) {
-                static ClientInstance* ci = nullptr;
-                if (ci == nullptr) ci = selaura::mc->getPrimaryClientInstance().get();
+            if (ev.keys_curr.test(screen.get_key())) {
                 ci->releaseCursor();
                 screen.set_enabled(true);
             }
 
-            if (ipm.is_key_pressed(VK_ESCAPE) && screen.get_enabled()) {
+            if (ev.keys_curr.test(VK_ESCAPE) && screen.get_enabled()) {
+                ci->grabCursor();
                 screen.set_enabled(false);
+
+                ev.cancelled = true;
                 cancel_next = true;
             }
 
             if (screen.get_enabled()) any_screen_open = true;
         });
 
-        ipm.set_input_cancelled(cancel_next);
+        if (any_screen_open || ev.cancelled) {
+            ev.cancelled = true;
+        }
+
         cancel_next = any_screen_open;
+
+        if (any_screen_open) {
+            ci->releaseCursor();
+        }
     });
 
     const int target_ms = 5000;

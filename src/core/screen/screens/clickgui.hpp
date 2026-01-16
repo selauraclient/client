@@ -5,7 +5,6 @@
 
 namespace selaura {
     struct clickgui : screen {
-
         clickgui() {
             set_key(0xA1);
         }

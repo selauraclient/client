@@ -147,6 +147,7 @@ list(APPEND EMBEDDED_RESOURCES ${FONT_EMBEDDED_OBJS})
 
 add_library(Selaura SHARED
         core/dllmain.cpp
+        core/win_utils.cpp
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_demo.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -208,7 +209,7 @@ target_link_libraries(Selaura PUBLIC
         glm
         glaze::glaze
         ${SDK_LIB}
-        Version.lib dwmapi.lib d3d11.lib d3d12.lib dxgi.lib d3dcompiler.lib gameinput.lib windowsapp
+        Version.lib dwmapi.lib d3d11.lib d3d12.lib dxgi.lib d3dcompiler.lib gameinput.lib windowsapp Shlwapi.lib gdiplus.lib
 )
 
 add_dependencies(Selaura GenerateSdk)
