@@ -17,3 +17,13 @@ struct selaura::detour<&MinecraftGame::_update> {
         return selaura::hook<&MinecraftGame::_update>::call(thisptr);
     }
 };
+
+
+template <>
+struct selaura::detour<&MinecraftGame::onDeviceLost> {
+    static void hk(MinecraftGame* thisptr) {
+        auto& scrn = selaura::get<selaura::screen_manager>();
+        if (scrn.any_screens_enabled()) return;
+        return selaura::hook<&MinecraftGame::onDeviceLost>::call(thisptr);
+    }
+};

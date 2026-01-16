@@ -32,4 +32,5 @@ public:
     }
 
     MCAPI void _update();
+    MCAPI void onDeviceLost();
 };

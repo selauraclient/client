@@ -11,3 +11,4 @@ EXPORTS
     ?_update@MinecraftGame@@QEAAXXZ @9 NONAME
     ?grabCursor@ClientInstance@@QEAAXXZ @10 NONAME
     ?releaseCursor@ClientInstance@@QEAAXXZ @11 NONAME
+    ?onDeviceLost@MinecraftGame@@QEAAXXZ @12 NONAME

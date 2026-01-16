@@ -61,6 +61,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::enable();
     selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::enable();
     selaura::hook<&ClientInstance::grabCursor>::enable();
+    selaura::hook<&MinecraftGame::onDeviceLost>::enable();
 
 
     GameInput::v2::IGameInput* game_input = nullptr;
