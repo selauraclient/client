@@ -10,10 +10,11 @@
 #include <memory/hooks/CoreHooks.cpp>
 #include <memory/hooks/D3DHooks.cpp>
 #include <memory/hooks/InputHooks.cpp>
-#include <memory/patterns/resolver.hpp>
 #include <sdk/core/GameInput_GDK.h>
 #include <sdk/core/MinecraftGame.hpp>
 #include <sdk/renderer/bgfx.hpp>
+
+#include <resolver.hpp>
 
 #include "win_utils.hpp"
 

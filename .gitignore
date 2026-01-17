@@ -379,3 +379,5 @@ CMakeCache.txt
 _deps/
 
 build/
+
+*.def

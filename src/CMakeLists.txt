@@ -10,13 +10,20 @@ find_program(FXC_EXE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin/*
 
 set(SDK_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py)
 set(PATTERNS_JSON ${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json)
-set(SDK_DEF ${CMAKE_CURRENT_SOURCE_DIR}/sdk/sdk.def)
-set(RESOLVER_HPP ${CMAKE_CURRENT_SOURCE_DIR}/memory/patterns/resolver.hpp)
-set(SDK_LIB ${CMAKE_CURRENT_BINARY_DIR}/sdk.lib)
+
+set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
+file(MAKE_DIRECTORY ${GEN_DIR})
+
+set(SDK_DEF ${GEN_DIR}/sdk.def)
+set(RESOLVER_HPP ${GEN_DIR}/resolver.hpp)
+set(SDK_LIB ${GEN_DIR}/sdk.lib)
 
 add_custom_command(
         OUTPUT ${SDK_DEF} ${RESOLVER_HPP}
         COMMAND Python3::Interpreter ${SDK_PARSER}
+        --input ${PATTERNS_JSON}
+        --def-out ${SDK_DEF}
+        --cpp-out ${RESOLVER_HPP}
         DEPENDS ${SDK_PARSER} ${PATTERNS_JSON}
         VERBATIM
 )
@@ -169,6 +176,7 @@ add_library(Selaura SHARED
         core/screen/screens/clickgui.cpp
         ${EMBEDDED_RESOURCES}
         ${SHADER_HEADERS}
+        ${RESOLVER_HPP}
 )
 
 if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
@@ -193,6 +201,7 @@ endif()
 
 target_include_directories(Selaura PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${GEN_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders
         ${imgui_SOURCE_DIR}
         ${nlohmann_json_SOURCE_DIR}/include
@@ -209,7 +218,16 @@ target_link_libraries(Selaura PUBLIC
         glm
         glaze::glaze
         ${SDK_LIB}
-        Version.lib dwmapi.lib d3d11.lib d3d12.lib dxgi.lib d3dcompiler.lib gameinput.lib windowsapp Shlwapi.lib gdiplus.lib
+        Version.lib
+        dwmapi.lib
+        d3d11.lib
+        d3d12.lib
+        dxgi.lib
+        d3dcompiler.lib
+        gameinput.lib
+        windowsapp
+        Shlwapi.lib
+        gdiplus.lib
 )
 
 add_dependencies(Selaura GenerateSdk)
