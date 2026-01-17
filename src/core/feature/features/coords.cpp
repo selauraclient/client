@@ -4,6 +4,7 @@
 #include "core/event/event_manager.hpp"
 #include "core/renderer/sgfx.hpp"
 #include "sdk/actor/components/StateVectorComponent.hpp"
+#include "sdk/actor/components/OffsetsComponent.hpp"
 
 namespace selaura {
     void coords::on_enable() {
@@ -17,15 +18,21 @@ namespace selaura {
     }
 
     void coords::on_render(render_event& ev) {
-        sgfx::draw_text(fmt::format("Position: {}, {}, {}", (int)this->pos.x, (int)this->pos.y, (int)this->pos.z), 10, 10, 32.f);
+        auto str = fmt::format("{}, {}, {}", (int)this->pos.x, (int)this->pos.y, (int)this->pos.z);
+        sgfx::draw_text(str, 10, 10, 24.f);
     }
+
 
     void coords::on_mcupdate(mcgame_update& ev) {
         if (LocalPlayer* lp = ev.mc->getPrimaryLocalPlayer(); lp) {
             auto& ent = lp->getEntityContext();
 
-            if (auto* cmp = ent.tryGetComponent<StateVectorComponent>(); cmp) {
-                this->pos = cmp->mPos;
+            if (auto* svc = ent.tryGetComponent<StateVectorComponent>(); svc) {
+                this->pos = svc->mPos;
+            }
+
+            if (auto* ofc = ent.tryGetComponent<OffsetsComponent>(); ofc) {
+                this->pos.y -= ofc->mHeightOffset;
             }
         }
     }

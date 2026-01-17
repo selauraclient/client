@@ -13,10 +13,6 @@ namespace selaura {
 
         void toggle();
 
-        virtual void on_render(render_event& ev) = 0;
-        virtual void on_mcupdate(mcgame_update& ev) = 0;
-        virtual void on_input(input_event& ev) = 0;
-
         void set_key(uint32_t new_key);
         uint32_t get_key();
     private:

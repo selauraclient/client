@@ -176,6 +176,7 @@ add_library(Selaura SHARED
         core/screen/screens/clickgui.cpp
         core/feature/feature.cpp
         core/feature/features/coords.cpp
+        core/feature/features/keystrokes.cpp
         ${EMBEDDED_RESOURCES}
         ${SHADER_HEADERS}
         ${RESOLVER_HPP}

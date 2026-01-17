@@ -2,6 +2,7 @@
 #include <pch.hpp>
 
 #include "features/coords.hpp"
+#include "features/keystrokes.hpp"
 
 namespace selaura {
     struct feature_manager {
@@ -27,6 +28,6 @@ namespace selaura {
             );
         }
     private:
-        std::tuple<coords> features{};
+        std::tuple<coords, keystrokes> features{};
     };
 };

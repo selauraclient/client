@@ -4,8 +4,8 @@
 #include "../feature.hpp"
 
 namespace selaura {
-    struct coords : feature {
-        coords() {}
+    struct keystrokes : feature {
+        keystrokes() {}
 
         void on_enable() override;
         void on_disable() override;
@@ -13,6 +13,12 @@ namespace selaura {
         void on_render(render_event& ev);
         void on_mcupdate(mcgame_update& ev);
     private:
-        glm::vec3 pos = {0, 0, 0};
+        bool up{}, left{}, right{}, down{}, jump{};
+
+        float up_t   = 0.f;
+        float left_t = 0.f;
+        float right_t= 0.f;
+        float down_t = 0.f;
+        float jump_t = 0.f;
     };
 };
