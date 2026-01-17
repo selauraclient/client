@@ -40,6 +40,7 @@
 #include <type_traits>
 #include <vector>
 
+#include <entt/entt.hpp>
 #include <glaze/glaze.hpp>
 #include <glm/glm.hpp>
 #include <fmt/base.h>

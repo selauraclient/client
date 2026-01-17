@@ -6,6 +6,7 @@
 #include <core/service/notification_manager.hpp>
 #include <core/service/input_manager.hpp>
 #include <core/screen/screen_manager.hpp>
+#include <core/feature/feature_manager.hpp>
 
 #include <sdk/core/MinecraftGame.hpp>
 
@@ -16,8 +17,8 @@ namespace selaura {
             console,
             notification_manager,
             input_manager,
-
-            screen_manager
+            screen_manager,
+            feature_manager
         >;
 
         template <typename T>

@@ -174,6 +174,8 @@ add_library(Selaura SHARED
         core/service/input_manager.cpp
         core/screen/screen.cpp
         core/screen/screens/clickgui.cpp
+        core/feature/feature.cpp
+        core/feature/features/coords.cpp
         ${EMBEDDED_RESOURCES}
         ${SHADER_HEADERS}
         ${RESOLVER_HPP}

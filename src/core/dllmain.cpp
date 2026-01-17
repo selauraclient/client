@@ -17,6 +17,7 @@
 #include <resolver.hpp>
 
 #include "win_utils.hpp"
+#include "sdk/actor/components/MoveInputComponent.hpp"
 
 LOAD_RESOURCE(selaura_icon_png)
 
@@ -101,6 +102,10 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
         if (scrn.any_screens_enabled()) {
             ev.mc->getPrimaryClientInstance()->releaseCursor();
         }
+    });
+
+    selaura::get<selaura::feature_manager>().for_each([&](auto& feat) {
+        feat.set_enabled(true);
     });
 
     const int target_ms = 5000;

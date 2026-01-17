@@ -206,28 +206,45 @@ namespace sgfx {
     }
 
     void draw_text(std::string_view text, float x, float y, float size, glm::vec4 color, int aliased) {
-        if (!current_font) return;
+        if (!current_font || text.empty()) return;
         auto& ctx = get_context();
         ctx.current_texture = current_font->tex_id;
         ctx.add_command_if_needed();
+
         bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
-        float cur_x = use_aliased ? std::floor(x + 0.5f) : x;
-        float cur_y = use_aliased ? std::floor(y + 0.5f) : y;
-        float aa_flag = use_aliased ? 1.0f : 0.0f;
         float effective_size = use_aliased ? std::round(size) : size;
+
+        float max_ascent = 0.0f;
+        for (const auto& [unicode, g] : current_font->glyphs) {
+            max_ascent = std::max(max_ascent, g.y1);
+        }
+
+        float cur_x = x;
+        float cur_y = y + (max_ascent * effective_size);
+
+        if (use_aliased) {
+            cur_x = std::floor(cur_x + 0.5f);
+            cur_y = std::floor(cur_y + 0.5f);
+        }
+
+        float aa_flag = use_aliased ? 1.0f : 0.0f;
         bool first_glyph = true;
+
         for (size_t i = 0; i < text.length(); ) {
             uint32_t c = decode_utf8(text, i);
             if (!current_font->glyphs.count(c)) continue;
             const auto& g = current_font->glyphs.at(c);
+
             if (first_glyph) {
                 cur_x -= g.x0 * effective_size;
                 first_glyph = false;
             }
+
             float gx = cur_x + g.x0 * effective_size;
             float gy = cur_y - g.y1 * effective_size;
             float gw = (g.x1 - g.x0) * effective_size;
             float gh = (g.y1 - g.y0) * effective_size;
+
             if (use_aliased) {
                 float sx = std::floor(gx + 0.5f);
                 float sy = std::floor(gy + 0.5f);
@@ -235,14 +252,18 @@ namespace sgfx {
                 gh = std::floor(gy + gh + 0.5f) - sy;
                 gx = sx; gy = sy;
             }
+
             glm::vec4 shader_params = { gw, gh, (float)current_font->px_range, 3.0f };
             shader_params.y = aa_flag;
+
             ctx.data.vertices.push_back({ {gx, gy, 0}, color, {g.u0, g.v0}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx+gw, gy, 0}, color, {g.u1, g.v0}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx+gw, gy+gh, 0}, color, {g.u1, g.v1}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx, gy+gh, 0}, color, {g.u0, g.v1}, shader_params, {0,0,0,0} });
+
             ctx.data.commands.back().count += 6;
-            float advance = g.advance * size;
+
+            float advance = g.advance * effective_size;
             cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
         }
     }
