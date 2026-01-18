@@ -6,7 +6,6 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-find_program(FXC_EXE fxc.exe PATHS "C:/Program Files (x86)/Windows Kits/10/bin/*/x64")
 
 set(SDK_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py)
 set(PATTERNS_JSON ${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json)
@@ -74,7 +73,7 @@ foreach(SHADER_FILE ${HLSL_SHADERS})
     string(REPLACE "_h" "" VAR_NAME ${VAR_NAME})
     add_custom_command(
             OUTPUT "${HEADER_PATH}"
-            COMMAND "${FXC_EXE}" /nologo /T ${SHADER_TYPE} /E main /Fh "${HEADER_PATH}" /Vn "${VAR_NAME}" "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER_FILE}"
+            COMMAND "fxc.exe" /nologo /T ${SHADER_TYPE} /E main /Fh "${HEADER_PATH}" /Vn "${VAR_NAME}" "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER_FILE}"
             DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER_FILE}"
             VERBATIM
     )
@@ -152,35 +151,18 @@ if(RAW_RESOURCES)
 endif()
 list(APPEND EMBEDDED_RESOURCES ${FONT_EMBEDDED_OBJS})
 
+file(GLOB_RECURSE SELAURA_SOURCES
+    CONFIGURE_DEPENDS
+    "core/*.cpp"
+    "memory/*.cpp"
+    "sdk/*.cpp"
+)
+
 add_library(Selaura SHARED
-        core/dllmain.cpp
-        core/win_utils.cpp
-        ${imgui_SOURCE_DIR}/imgui.cpp
-        ${imgui_SOURCE_DIR}/imgui_demo.cpp
-        ${imgui_SOURCE_DIR}/imgui_draw.cpp
-        ${imgui_SOURCE_DIR}/imgui_tables.cpp
-        ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_dx11.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp
-        ${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp
-        core/renderer/sgfx.cpp
-        core/renderer/renderer_d3d.cpp
-        core/renderer/renderer_d3d11.cpp
-        core/renderer/renderer_d3d12.cpp
-        memory/hooks/CoreHooks.cpp
-        memory/hooks/D3DHooks.cpp
-        memory/hooks/InputHooks.cpp
-        core/service/console.cpp
-        core/service/notification_manager.cpp
-        core/service/input_manager.cpp
-        core/screen/screen.cpp
-        core/screen/screens/clickgui.cpp
-        core/feature/feature.cpp
-        core/feature/features/coords.cpp
-        core/feature/features/keystrokes.cpp
-        ${EMBEDDED_RESOURCES}
-        ${SHADER_HEADERS}
-        ${RESOLVER_HPP}
+    ${SELAURA_SOURCES}
+    ${EMBEDDED_RESOURCES}
+    ${SHADER_HEADERS}
+    ${RESOLVER_HPP}
 )
 
 if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")

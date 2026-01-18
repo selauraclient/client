@@ -1,12 +1,9 @@
 #include <pch.hpp>
-#include <backends/imgui_impl_win32.h>
 
 #include <core/service_manager.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
 #include <sdk/core/GameInput_GDK.h>
-
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace selaura {
     static WNDPROC oWndProc;
@@ -59,7 +56,6 @@ namespace selaura {
 
             was_cancelled_last_frame = true;
 
-            if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) return TRUE;
             switch (uMsg) {
             case WM_INPUT:
             case WM_LBUTTONDOWN:
@@ -82,7 +78,6 @@ namespace selaura {
             was_cancelled_last_frame = false;
         }
 
-        if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) return TRUE;
         return CallWindowProc(selaura::oWndProc, hWnd, uMsg, wParam, lParam);
     }
 

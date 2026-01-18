@@ -1,11 +1,10 @@
 #pragma once
 #include <pch.hpp>
-#include <imgui.h>
 
 namespace selaura {
     struct log_message {
         std::string text;
-        ImVec4 color;
+        glm::vec4 color;
     };
 
     class console {
@@ -19,7 +18,7 @@ namespace selaura {
         char input_buf[256]{};
     public:
         void render();
-        void push_text(const std::string& text, const ImVec4& color = ImVec4(0.95f, 0.95f, 0.97f, 1.00f));
+        void push_text(const std::string& text, const glm::vec4& color);
         void shutdown();
 
         ~console() {
