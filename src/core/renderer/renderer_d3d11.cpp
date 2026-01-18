@@ -5,8 +5,11 @@
 namespace sgfx {
     bool renderer_d3d11::init(void* sc) {
         swapchain.copy_from(static_cast<IDXGISwapChain3*>(sc));
-        if (FAILED(swapchain->GetDevice(IID_PPV_ARGS(device.put())))) return false;
-        device->GetImmediateContext(ctx.put());
+
+        if (!device) {
+            if (FAILED(swapchain->GetDevice(IID_PPV_ARGS(device.put())))) return false;
+            device->GetImmediateContext(ctx.put());
+        }
 
         winrt::com_ptr<ID3D11Texture2D> bb;
         swapchain->GetBuffer(0, IID_PPV_ARGS(bb.put()));

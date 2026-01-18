@@ -1,5 +1,6 @@
 #include "sgfx.hpp"
 #include "renderer_d3d11.hpp"
+#include "renderer_d3d12.hpp"
 
 #if defined(__clang__) && defined(_MSC_VER)
     #ifdef __cpuid
@@ -11,6 +12,12 @@
 #include <stb_image.h>
 
 namespace sgfx {
+    static ID3D12CommandQueue* global_d3d12_queue = nullptr;
+
+    void set_d3d12_queue(void* queue) {
+        global_d3d12_queue = static_cast<ID3D12CommandQueue*>(queue);
+    }
+
     context& get_context() {
         static context ctx;
         return ctx;
@@ -18,8 +25,24 @@ namespace sgfx {
 
     bool init(void* native_swapchain) {
         auto& ctx = get_context();
-        ctx.backend = std::make_unique<renderer_d3d11>();
-        return ctx.backend->init(native_swapchain);
+        auto* sc3 = static_cast<IDXGISwapChain3*>(native_swapchain);
+
+        winrt::com_ptr<ID3D12Device> test_device;
+        if (SUCCEEDED(sc3->GetDevice(IID_PPV_ARGS(test_device.put())))) {
+            if (!global_d3d12_queue) return false;
+
+            auto d12_backend = std::make_unique<renderer_d3d12>();
+            d12_backend->d3d12_queue.copy_from(global_d3d12_queue);
+
+            if (d12_backend->init(native_swapchain)) {
+                ctx.backend = std::move(d12_backend);
+                return true;
+            }
+            return false;
+        } else {
+            ctx.backend = std::make_unique<renderer_d3d11>();
+            return ctx.backend->init(native_swapchain);
+        }
     }
 
     void shutdown() {
@@ -44,7 +67,6 @@ namespace sgfx {
         ctx.current_texture = nullptr;
         ctx.clip_enabled = false;
         ctx.current_clip = { 0, 0, 0, 0 };
-
         sgfx::draw_rect(0, 0, 0, 0, {0, 0, 0, 0});
     }
 
@@ -95,10 +117,8 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = nullptr;
         ctx.add_command_if_needed();
-
         glm::vec4 final_col = normalize_col(col);
         glm::vec4 p = { w, h, 0.0f, 0.0f };
-
         ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
@@ -110,10 +130,8 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = tex;
         ctx.add_command_if_needed();
-
         glm::vec4 final_col = normalize_col(col);
         glm::vec4 p = { w, h, 0.0f, 2.0f };
-
         ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
@@ -123,28 +141,23 @@ namespace sgfx {
 
     void draw_blur(float x, float y, float w, float h, float intensity, int iterations, glm::vec4 radii) {
         auto& ctx = get_context();
-
         draw_cmd cmd{};
         cmd.is_blur = true;
         cmd.blur_intensity = intensity;
         cmd.blur_iterations = iterations;
         cmd.count = 6;
         ctx.data.commands.push_back(cmd);
-
         float sw = ctx.data.display_size.x;
         float sh = ctx.data.display_size.y;
         float u0 = x / sw;
         float v0 = y / sh;
         float u1 = (x + w) / sw;
         float v1 = (y + h) / sh;
-
         glm::vec4 p = { w, h, 0.0f, 4.0f };
-
         ctx.data.vertices.push_back({{x, y, 0},     {1,1,1,1}, {u0, v0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y, 0},   {1,1,1,1}, {u1, v0}, p, radii});
         ctx.data.vertices.push_back({{x+w, y+h, 0}, {1,1,1,1}, {u1, v1}, p, radii});
         ctx.data.vertices.push_back({{x, y+h, 0},   {1,1,1,1}, {u0, v1}, p, radii});
-
         ctx.current_texture = reinterpret_cast<texture_id>(-1);
     }
 
@@ -210,41 +223,32 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = current_font->tex_id;
         ctx.add_command_if_needed();
-
         bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
         float effective_size = use_aliased ? std::round(size) : size;
-
         float max_ascent = 0.0f;
         for (const auto& [unicode, g] : current_font->glyphs) {
             max_ascent = std::max(max_ascent, g.y1);
         }
-
         float cur_x = x;
         float cur_y = y + (max_ascent * effective_size);
-
         if (use_aliased) {
             cur_x = std::floor(cur_x + 0.5f);
             cur_y = std::floor(cur_y + 0.5f);
         }
-
         float aa_flag = use_aliased ? 1.0f : 0.0f;
         bool first_glyph = true;
-
         for (size_t i = 0; i < text.length(); ) {
             uint32_t c = decode_utf8(text, i);
             if (!current_font->glyphs.count(c)) continue;
             const auto& g = current_font->glyphs.at(c);
-
             if (first_glyph) {
                 cur_x -= g.x0 * effective_size;
                 first_glyph = false;
             }
-
             float gx = cur_x + g.x0 * effective_size;
             float gy = cur_y - g.y1 * effective_size;
             float gw = (g.x1 - g.x0) * effective_size;
             float gh = (g.y1 - g.y0) * effective_size;
-
             if (use_aliased) {
                 float sx = std::floor(gx + 0.5f);
                 float sy = std::floor(gy + 0.5f);
@@ -252,17 +256,13 @@ namespace sgfx {
                 gh = std::floor(gy + gh + 0.5f) - sy;
                 gx = sx; gy = sy;
             }
-
             glm::vec4 shader_params = { gw, gh, (float)current_font->px_range, 3.0f };
             shader_params.y = aa_flag;
-
             ctx.data.vertices.push_back({ {gx, gy, 0}, color, {g.u0, g.v0}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx+gw, gy, 0}, color, {g.u1, g.v0}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx+gw, gy+gh, 0}, color, {g.u1, g.v1}, shader_params, {0,0,0,0} });
             ctx.data.vertices.push_back({ {gx, gy+gh, 0}, color, {g.u0, g.v1}, shader_params, {0,0,0,0} });
-
             ctx.data.commands.back().count += 6;
-
             float advance = g.advance * effective_size;
             cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
         }

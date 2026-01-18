@@ -1,5 +1,6 @@
 #pragma once
 #include <pch.hpp>
+
 class UIControl : public std::enable_shared_from_this<UIControl> {
 public:
     glm::vec2 mCachedPosition;

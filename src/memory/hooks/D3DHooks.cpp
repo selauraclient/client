@@ -14,6 +14,8 @@
 #include <core/renderer/sgfx.hpp>
 #include <core/renderer/renderer_d3d11.hpp>
 
+#include "core/renderer/renderer_d3d12.hpp"
+
 static bool hooks_init = false;
 
 LOAD_RESOURCE(Poppins_msdf_png)
@@ -32,8 +34,9 @@ static bool init = false;
 template <>
 struct selaura::detour<&IDXGISwapChain::Present> {
     static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {
-        if (!init && sgfx::init(thisptr)) {
-            init = true;
+        if (!init) {
+            init = sgfx::init(thisptr);
+            return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
         }
 
         auto screen_size = sgfx::get_context().backend->get_screen_size();
@@ -67,7 +70,7 @@ struct selaura::detour<&IDXGISwapChain::ResizeBuffers> {
 template<>
 struct selaura::detour<&ID3D12CommandQueue::ExecuteCommandLists> {
     static void hk(ID3D12CommandQueue* thisptr, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists) {
-        //if (!d3d12_queue) d3d12_queue = thisptr;
+        sgfx::set_d3d12_queue(thisptr);
         return selaura::hook<&ID3D12CommandQueue::ExecuteCommandLists>::call(thisptr, NumCommandLists, ppCommandLists);
     }
 };

@@ -53,6 +53,8 @@ namespace sgfx {
 
         virtual void* get_device() = 0;
         virtual void* get_swapchain() = 0;
+
+        winrt::com_ptr<ID3D12CommandQueue> d3d12_queue;
     };
 
     struct context {
@@ -67,6 +69,7 @@ namespace sgfx {
     };
 
     context& get_context();
+    void set_d3d12_queue(void* queue);
 
     bool init(void* native_swapchain);
     void shutdown();

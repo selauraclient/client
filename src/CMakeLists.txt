@@ -166,6 +166,7 @@ add_library(Selaura SHARED
         core/renderer/sgfx.cpp
         core/renderer/renderer_d3d.cpp
         core/renderer/renderer_d3d11.cpp
+        core/renderer/renderer_d3d12.cpp
         memory/hooks/CoreHooks.cpp
         memory/hooks/D3DHooks.cpp
         memory/hooks/InputHooks.cpp

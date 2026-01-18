@@ -19,8 +19,7 @@ namespace sgfx {
         glm::vec2 get_screen_size() const override { return screen_size; }
 
         void* get_device() override;
-
-    private:
+    protected:
         void create_blur_resources(const D3D11_TEXTURE2D_DESC& bb_desc);
 
         winrt::com_ptr<ID3D11Device> device;
