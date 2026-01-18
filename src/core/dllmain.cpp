@@ -64,7 +64,7 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     selaura::hook<&bgfx::d3d12::RendererContextD3D12::submit>::enable();
     selaura::hook<&ClientInstance::grabCursor>::enable();
     selaura::hook<&MinecraftGame::onDeviceLost>::enable();
-
+    selaura::hook<&ScreenView::render>::enable();
 
     GameInput::v2::IGameInput* game_input = nullptr;
     if (FAILED(GameInput::v2::GameInputCreate(&game_input))) spdlog::info("No GameInput");
@@ -82,14 +82,18 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     Sleep(500);
 
     auto& scrn = selaura::get<selaura::screen_manager>();
+    selaura::get<selaura::event_manager>().subscribe<selaura::sv_render_event>([&](auto& ev) {
+        scrn.is_in_hud_screen = (ev.screen_name == "hud_screen");
+    });
+
     selaura::get<selaura::event_manager>().subscribe<selaura::input_event>([&](auto& ev) {
          scrn.for_each([&](auto& screen) {
             using screen_t = std::remove_cvref_t<decltype(screen)>;
-            if (ev.keys_curr.test(screen.get_key())) {
+            if (ev.keys_curr.test(screen.get_key()) && scrn.is_in_hud_screen) {
                 scrn.enable_screen<screen_t>();
             }
 
-            if (ev.keys_curr.test(VK_ESCAPE) && screen.get_enabled()) {
+            if (ev.keys_curr.test(VK_ESCAPE) && screen.get_enabled() && scrn.is_in_hud_screen) {
                 scrn.disable_screen<screen_t>();
                 ev.cancelled = true;
             }

@@ -40,6 +40,8 @@ namespace selaura {
                 screens
             );
         }
+
+        bool is_in_hud_screen = false;
     private:
         std::optional<std::reference_wrapper<screen>> active_screen;
         std::tuple<clickgui> screens{};

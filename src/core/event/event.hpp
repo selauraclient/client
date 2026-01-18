@@ -2,6 +2,7 @@
 #include <pch.hpp>
 
 #include <sdk/core/MinecraftGame.hpp>
+#include <sdk/renderer/ScreenView.hpp>
 
 namespace selaura {
     struct event {
@@ -30,5 +31,10 @@ namespace selaura {
         uint32_t key;
         bool is_down;
         bool is_game_input;
+    };
+
+    struct sv_render_event final : event {
+        ScreenView* sv;
+        std::string screen_name;
     };
 };
