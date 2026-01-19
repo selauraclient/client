@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
 
+set(CPM_DOWNLOAD_ALL TRUE)
+set(CPM_USE_LOCAL_PACKAGES TRUE)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(SDK_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py)
@@ -83,13 +86,12 @@ endforeach()
 CPMAddPackage("gh:BasedInc/libhat@0.9.0")
 CPMAddPackage("gh:fmtlib/fmt#11.1.4")
 CPMAddPackage("gh:skypjack/entt#fe8d7d78c4823e8a66a050bf86f5c6318cf76ce7")
-CPMAddPackage("gh:cursey/SafetyHook#main")
-CPMAddPackage("gh:ocornut/imgui#master")
-CPMAddPackage("gh:g-truc/glm#master")
-CPMAddPackage("gh:stephenberry/glaze#main")
-CPMAddPackage("gh:nothings/stb#master")
-CPMAddPackage("gh:DisabledMallis/magic_vtable#main")
-CPMAddPackage(URI "gh:gabime/spdlog#v1.x" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
+CPMAddPackage("gh:cursey/SafetyHook#983ba5c4b72866c8ed5020b6d57b7108fd1622c2")
+CPMAddPackage("gh:g-truc/glm#e7970a8b26732f1b0df9690f7180546f8c30e48e")
+CPMAddPackage("gh:stephenberry/glaze@7.0.1")
+CPMAddPackage("gh:nothings/stb#f1c79c02822848a9bed4315b12c8c8f3761e1296")
+CPMAddPackage("gh:DisabledMallis/magic_vtable#dbc41e2d13766a644ea88cbd4b839202e01ba582")
+CPMAddPackage(URI "gh:gabime/spdlog@1.17.0" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
 
 set(MSDF_GEN_EXE "${CMAKE_SOURCE_DIR}/msdf-atlas-gen.exe")
 file(GLOB_RECURSE TTF_FONTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "resources/*.ttf")
@@ -190,7 +192,6 @@ target_include_directories(Selaura PRIVATE
         ${GEN_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders
         ${imgui_SOURCE_DIR}
-        ${nlohmann_json_SOURCE_DIR}/include
         ${stb_SOURCE_DIR}
         ${magic_vtable_SOURCE_DIR}
 )

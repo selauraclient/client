@@ -1,7 +1,5 @@
 #pragma once
 #include <pch.hpp>
-
-#include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
 
 #include <core/service_manager.hpp>
