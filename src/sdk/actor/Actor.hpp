@@ -1,6 +1,6 @@
 #pragma once
 #include <pch.hpp>
-#include "components/IEntityComponent.hpp"
+#include "EntityContext.hpp"
 
 class Actor {
 public:

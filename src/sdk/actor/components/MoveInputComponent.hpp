@@ -1,5 +1,5 @@
 #pragma once
-#include "IEntityComponent.hpp"
+#include "../ecs/IEntityComponent.hpp"
 #include "MoveInputState.hpp"
 
 struct MoveInputComponent : public IEntityComponent {

@@ -1,6 +1,6 @@
 #pragma once
 #include <pch.hpp>
-#include "IEntityComponent.hpp"
+#include "../ecs/IEntityComponent.hpp"
 
 struct OffsetsComponent : IEntityComponent {
     static constexpr hat::fixed_string type_name = "struct OffsetsComponent";
