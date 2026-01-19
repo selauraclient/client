@@ -191,7 +191,6 @@ target_include_directories(Selaura PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${GEN_DIR}
         ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders
-        ${imgui_SOURCE_DIR}
         ${stb_SOURCE_DIR}
         ${magic_vtable_SOURCE_DIR}
 )

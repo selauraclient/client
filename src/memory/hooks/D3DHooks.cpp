@@ -1,9 +1,5 @@
 #include <pch.hpp>
 
-#include <imgui.h>
-#include <backends/imgui_impl_dx11.h>
-#include <backends/imgui_impl_win32.h>
-
 #include <core/service_manager.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
