@@ -3,14 +3,11 @@
 
 namespace sgfx {
     bool renderer_d3d12::init(void* sc) {
-        if (!sc) return false;
-        if (!d3d12_queue) return false;
+        if (!sc || !d3d12_queue) return false;
 
         swapchain.copy_from(static_cast<IDXGISwapChain3*>(sc));
 
-        if (FAILED(swapchain->GetDevice(IID_PPV_ARGS(d12_device.put())))) {
-            return false;
-        }
+        if (FAILED(swapchain->GetDevice(IID_PPV_ARGS(d12_device.put())))) return false;
 
         UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_SINGLETHREADED;
         ID3D12CommandQueue* queue_ptr = d3d12_queue.get();
@@ -62,7 +59,7 @@ namespace sgfx {
         device->CreateRasterizerState(&r_desc, raster_scissor_on.put());
 
         D3D11_SAMPLER_DESC s_desc{};
-        s_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        s_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
         s_desc.AddressU = s_desc.AddressV = s_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
         device->CreateSamplerState(&s_desc, sampler.put());
 
@@ -106,23 +103,69 @@ namespace sgfx {
 
     void renderer_d3d12::render(const draw_data& data) {
         if (!d11on12_device || !ctx) return;
+
+        if (data.display_size.x != screen_size.x || data.display_size.y != screen_size.y) {
+            ctx->OMSetRenderTargets(0, nullptr, nullptr);
+            ctx->ClearState();
+            ctx->Flush();
+
+            wrapped_rtvs.clear();
+            wrapped_back_buffers.clear();
+
+            DXGI_SWAP_CHAIN_DESC1 sc_desc;
+            swapchain->GetDesc1(&sc_desc);
+            buffer_count = sc_desc.BufferCount;
+            wrapped_back_buffers.resize(buffer_count);
+            wrapped_rtvs.resize(buffer_count);
+
+            for (uint32_t i = 0; i < buffer_count; i++) {
+                winrt::com_ptr<ID3D12Resource> res;
+                if (SUCCEEDED(swapchain->GetBuffer(i, IID_PPV_ARGS(res.put())))) {
+                    D3D11_RESOURCE_FLAGS d11_flags = { D3D11_BIND_RENDER_TARGET };
+                    d11on12_device->CreateWrappedResource(res.get(), &d11_flags, D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT, IID_PPV_ARGS(wrapped_back_buffers[i].put()));
+                    device->CreateRenderTargetView(wrapped_back_buffers[i].get(), nullptr, wrapped_rtvs[i].put());
+                }
+            }
+
+            D3D11_TEXTURE2D_DESC blur_res_desc{};
+            blur_res_desc.Width = sc_desc.Width;
+            blur_res_desc.Height = sc_desc.Height;
+            blur_res_desc.MipLevels = 1;
+            blur_res_desc.ArraySize = 1;
+            blur_res_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+            blur_res_desc.SampleDesc.Count = 1;
+            blur_res_desc.Usage = D3D11_USAGE_DEFAULT;
+            blur_res_desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+            create_blur_resources(blur_res_desc);
+            screen_size = data.display_size;
+        }
+
         uint32_t back_buffer_idx = swapchain->GetCurrentBackBufferIndex();
-        if (back_buffer_idx >= wrapped_back_buffers.size()) return;
         ID3D11Resource* current_wrapped_res = wrapped_back_buffers[back_buffer_idx].get();
+
         d11on12_device->AcquireWrappedResources(&current_wrapped_res, 1);
         this->rtv = wrapped_rtvs[back_buffer_idx];
+
         renderer_d3d11::render(data);
+
+        this->rtv = nullptr;
+        ID3D11RenderTargetView* null_rtv = nullptr;
+        ctx->OMSetRenderTargets(1, &null_rtv, nullptr);
+
         d11on12_device->ReleaseWrappedResources(&current_wrapped_res, 1);
         ctx->Flush();
     }
 
     void renderer_d3d12::shutdown() {
-        if (ctx) ctx->ClearState();
+        if (ctx) {
+            ctx->OMSetRenderTargets(0, nullptr, nullptr);
+            ctx->ClearState();
+            ctx->Flush();
+        }
         wrapped_rtvs.clear();
         wrapped_back_buffers.clear();
         d11on12_device = nullptr;
         d12_device = nullptr;
-        d3d12_queue = nullptr;
         renderer_d3d11::shutdown();
     }
 }

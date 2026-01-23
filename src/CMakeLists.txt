@@ -10,78 +10,39 @@ set(CPM_USE_LOCAL_PACKAGES TRUE)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
-set(SDK_PARSER ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py)
-set(PATTERNS_JSON ${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json)
-
 set(GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${GEN_DIR})
-
 set(SDK_DEF ${GEN_DIR}/sdk.def)
 set(RESOLVER_HPP ${GEN_DIR}/resolver.hpp)
 set(SDK_LIB ${GEN_DIR}/sdk.lib)
 
 add_custom_command(
-        OUTPUT ${SDK_DEF} ${RESOLVER_HPP}
-        COMMAND Python3::Interpreter ${SDK_PARSER}
-        --input ${PATTERNS_JSON}
-        --def-out ${SDK_DEF}
-        --cpp-out ${RESOLVER_HPP}
-        DEPENDS ${SDK_PARSER} ${PATTERNS_JSON}
-        VERBATIM
+    OUTPUT ${SDK_DEF} ${RESOLVER_HPP}
+    COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py"
+    --input "${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json"
+    --def-out ${SDK_DEF} --cpp-out ${RESOLVER_HPP}
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sdk_parser.py" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/patterns.json"
+    VERBATIM
 )
 
 add_custom_command(
-        OUTPUT ${SDK_LIB}
-        COMMAND lib /nologo /def:${SDK_DEF} /out:${SDK_LIB} /machine:x64
-        DEPENDS ${SDK_DEF}
-        VERBATIM
+    OUTPUT ${SDK_LIB}
+    COMMAND lib /nologo /def:${SDK_DEF} /out:${SDK_LIB} /machine:x64
+    DEPENDS ${SDK_DEF}
+    VERBATIM
 )
-
 add_custom_target(GenerateSdk DEPENDS ${SDK_DEF} ${SDK_LIB})
 
-function(ADD_RESOURCES out_var)
-    set(result)
-    foreach(in_f ${ARGN})
-        set(out_f "${CMAKE_CURRENT_BINARY_DIR}/${in_f}.o")
-        get_filename_component(out_dir "${out_f}" DIRECTORY)
-        file(MAKE_DIRECTORY "${out_dir}")
-        add_custom_command(OUTPUT "${out_f}"
-                COMMAND ld.exe -r -b binary -o "${out_f}" "${in_f}"
-                DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${in_f}"
-                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-                VERBATIM
-        )
-        list(APPEND result "${out_f}")
-    endforeach()
-    set(${out_var} "${result}" PARENT_SCOPE)
-endfunction()
+selaura_compile_shaders(SHADER_HEADERS)
+selaura_process_fonts(FONT_EMBEDDED_OBJS)
 
-file(GLOB_RECURSE HLSL_SHADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "resources/shaders/*.hlsl")
-set(SHADER_HEADERS "")
-foreach(SHADER_FILE ${HLSL_SHADERS})
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-    if(SHADER_NAME MATCHES "\\.vs\\.hlsl$")
-        set(SHADER_TYPE vs_5_0)
-        string(REPLACE ".vs.hlsl" "_vs.h" HEADER_NAME ${SHADER_NAME})
-    elseif(SHADER_NAME MATCHES "\\.ps\\.hlsl$")
-        set(SHADER_TYPE ps_5_0)
-        string(REPLACE ".ps.hlsl" "_ps.h" HEADER_NAME ${SHADER_NAME})
-    else()
-        continue()
-    endif()
-    set(HEADER_PATH "${CMAKE_CURRENT_BINARY_DIR}/resources/shaders/${HEADER_NAME}")
-    get_filename_component(HEADER_DIR "${HEADER_PATH}" DIRECTORY)
-    file(MAKE_DIRECTORY "${HEADER_DIR}")
-    string(MAKE_C_IDENTIFIER "g_${HEADER_NAME}" VAR_NAME)
-    string(REPLACE "_h" "" VAR_NAME ${VAR_NAME})
-    add_custom_command(
-            OUTPUT "${HEADER_PATH}"
-            COMMAND "fxc.exe" /nologo /T ${SHADER_TYPE} /E main /Fh "${HEADER_PATH}" /Vn "${VAR_NAME}" "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER_FILE}"
-            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER_FILE}"
-            VERBATIM
-    )
-    list(APPEND SHADER_HEADERS "${HEADER_PATH}")
-endforeach()
+file(GLOB_RECURSE RAW_RESOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} CONFIGURE_DEPENDS "resources/*")
+if(RAW_RESOURCES)
+    list(FILTER RAW_RESOURCES EXCLUDE REGEX ".*\\.ttf$")
+    list(FILTER RAW_RESOURCES EXCLUDE REGEX ".*\\.hlsl$")
+    selaura_add_resources(EMBEDDED_RESOURCES ${RAW_RESOURCES})
+endif()
+list(APPEND EMBEDDED_RESOURCES ${FONT_EMBEDDED_OBJS})
 
 CPMAddPackage("gh:BasedInc/libhat@0.9.0")
 CPMAddPackage("gh:fmtlib/fmt#11.1.4")
@@ -93,106 +54,23 @@ CPMAddPackage("gh:nothings/stb#f1c79c02822848a9bed4315b12c8c8f3761e1296")
 CPMAddPackage("gh:DisabledMallis/magic_vtable#dbc41e2d13766a644ea88cbd4b839202e01ba582")
 CPMAddPackage(URI "gh:gabime/spdlog@1.17.0" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
 
-set(MSDF_GEN_EXE "${CMAKE_SOURCE_DIR}/msdf-atlas-gen.exe")
-file(GLOB_RECURSE TTF_FONTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "resources/*.ttf")
-
-set(FONT_EMBEDDED_OBJS "")
-foreach(FONT_PATH ${TTF_FONTS})
-    get_filename_component(FONT_NAME ${FONT_PATH} NAME_WLE)
-    set(RESOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/resources")
-    set(ATLAS_PNG "${RESOURCE_DIR}/${FONT_NAME}_msdf.png")
-    set(ATLAS_JSON "${RESOURCE_DIR}/${FONT_NAME}_msdf.json")
-    set(CHARSET_TXT "${RESOURCE_DIR}/${FONT_NAME}_charset.txt")
-    set(OBJ_PNG "${ATLAS_PNG}.o")
-    set(OBJ_JSON "${ATLAS_JSON}.o")
-    file(MAKE_DIRECTORY "${RESOURCE_DIR}")
-    if(FONT_NAME MATCHES "FontAwesome")
-        set(CHARSET_CONTENT "[0x20, 0x7e], [0xf000, 0xf900]")
-    else()
-        set(CHARSET_CONTENT "[0x20, 0x7e]")
-    endif()
-    if(EXISTS "${CHARSET_TXT}")
-        file(READ "${CHARSET_TXT}" OLD_CONTENT)
-        if(NOT OLD_CONTENT STREQUAL CHARSET_CONTENT)
-            file(WRITE "${CHARSET_TXT}" "${CHARSET_CONTENT}")
-        endif()
-    else()
-        file(WRITE "${CHARSET_TXT}" "${CHARSET_CONTENT}")
-    endif()
-    add_custom_command(
-            OUTPUT "${ATLAS_PNG}" "${ATLAS_JSON}"
-            COMMAND "${MSDF_GEN_EXE}" -font "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}"
-            -format png -type msdf -size 128 -pxrange 8
-            -imageout "${ATLAS_PNG}" -json "${ATLAS_JSON}"
-            -charset "${CHARSET_TXT}"
-            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${FONT_PATH}" "${MSDF_GEN_EXE}" "${CHARSET_TXT}"
-            VERBATIM
-    )
-    add_custom_command(
-            OUTPUT "${OBJ_PNG}"
-            COMMAND ld.exe -r -b binary -o "${OBJ_PNG}" "resources/${FONT_NAME}_msdf.png"
-            DEPENDS "${ATLAS_PNG}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            VERBATIM
-    )
-    add_custom_command(
-            OUTPUT "${OBJ_JSON}"
-            COMMAND ld.exe -r -b binary -o "${OBJ_JSON}" "resources/${FONT_NAME}_msdf.json"
-            DEPENDS "${ATLAS_JSON}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-            VERBATIM
-    )
-    list(APPEND FONT_EMBEDDED_OBJS "${OBJ_PNG}" "${OBJ_JSON}")
-endforeach()
-
-file(GLOB_RECURSE RAW_RESOURCES RELATIVE ${CMAKE_CURRENT_LIST_DIR} CONFIGURE_DEPENDS "resources/*")
-if(RAW_RESOURCES)
-    list(FILTER RAW_RESOURCES EXCLUDE REGEX ".*\\.ttf$")
-    list(FILTER RAW_RESOURCES EXCLUDE REGEX ".*\\.hlsl$")
-    add_resources(EMBEDDED_RESOURCES ${RAW_RESOURCES})
-endif()
-list(APPEND EMBEDDED_RESOURCES ${FONT_EMBEDDED_OBJS})
-
-file(GLOB_RECURSE SELAURA_SOURCES
-    CONFIGURE_DEPENDS
-    "core/*.cpp"
-    "memory/*.cpp"
-    "sdk/*.cpp"
-)
+file(GLOB_RECURSE SELAURA_SOURCES CONFIGURE_DEPENDS "core/*.cpp" "memory/*.cpp" "sdk/*.cpp")
 
 add_library(Selaura SHARED
-    ${SELAURA_SOURCES}
-    ${EMBEDDED_RESOURCES}
-    ${SHADER_HEADERS}
-    ${RESOLVER_HPP}
+        ${SELAURA_SOURCES}
+        ${EMBEDDED_RESOURCES}
+        ${SHADER_HEADERS}
+        ${RESOLVER_HPP}
 )
 
 if(MSVC OR CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-    target_compile_options(Selaura PRIVATE
-            $<$<CONFIG:Release>:
-            /O2 /Oi /Ot /Gw /Gy /fp:fast
-            /EHs- /EHc- /GR- /D_HAS_EXCEPTIONS=0
-            >
-    )
-    target_link_options(Selaura PRIVATE
-            $<$<CONFIG:Release>:
-            /OPT:REF /OPT:ICF /LTCG /INCREMENTAL:NO /MANIFEST:NO /FUNCTIONPADMIN
-            >
-            /DELAYLOAD:sdk.dll
-    )
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(Selaura PRIVATE $<$<CONFIG:Release>:-flto=thin>)
-    target_link_options(Selaura PRIVATE $<$<CONFIG:Release>:-flto=thin>)
+    target_compile_options(Selaura PRIVATE $<$<CONFIG:Release>:/O2 /Oi /Ot /Gw /Gy /fp:fast /EHs- /EHc- /GR- /D_HAS_EXCEPTIONS=0>)
+    target_link_options(Selaura PRIVATE $<$<CONFIG:Release>:/OPT:REF /OPT:ICF /LTCG /INCREMENTAL:NO /MANIFEST:NO> /DELAYLOAD:sdk.dll)
 endif()
 
 target_include_directories(Selaura PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${GEN_DIR}
-        ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders
-        ${stb_SOURCE_DIR}
-        ${magic_vtable_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR} ${GEN_DIR} ${CMAKE_CURRENT_BINARY_DIR}/resources/shaders
+        ${stb_SOURCE_DIR} ${magic_vtable_SOURCE_DIR}
 )
 
 target_link_libraries(Selaura PUBLIC

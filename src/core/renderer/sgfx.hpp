@@ -3,11 +3,11 @@
 
 namespace sgfx {
     struct vertex {
-        glm::vec3 pos;
-        glm::vec4 col;
-        glm::vec2 uv;
-        glm::vec4 data;
-        glm::vec4 radii;
+        DirectX::XMFLOAT3 pos;
+        DirectX::XMFLOAT4 col;
+        DirectX::XMFLOAT2 uv;
+        DirectX::XMFLOAT4 data;
+        DirectX::XMFLOAT4 radii;
     };
 
     struct blur_cmd {

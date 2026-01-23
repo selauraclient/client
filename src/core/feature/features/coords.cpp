@@ -18,7 +18,7 @@ namespace selaura {
     }
 
     void coords::on_render(render_event& ev) {
-        auto str = fmt::format("{}, {}, {}", (int)this->pos.x, (int)this->pos.y, (int)this->pos.z);
+        auto str = fmt::format("{}, {}, {}", std::trunc(this->pos.x), std::trunc(this->pos.y), std::floor(this->pos.z));
         sgfx::draw_text(str, 10, 10, 24.f);
     }
 

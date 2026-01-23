@@ -27,11 +27,11 @@ LOAD_RESOURCE(selaura_icon_png)
 static bool init = false;
 
 template <>
-struct selaura::detour<&IDXGISwapChain::Present> {
-    static HRESULT hk(IDXGISwapChain* thisptr, UINT SyncInterval, UINT Flags) {
+struct selaura::detour<&IDXGISwapChain3::Present> {
+    static HRESULT hk(IDXGISwapChain3* thisptr, UINT SyncInterval, UINT Flags) {
         if (!init) {
             init = sgfx::init(thisptr);
-            return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+            return selaura::hook<&IDXGISwapChain3::Present>::call(thisptr, SyncInterval, Flags);
         }
 
         auto screen_size = sgfx::get_context().backend->get_screen_size();
@@ -49,16 +49,17 @@ struct selaura::detour<&IDXGISwapChain::Present> {
 
         sgfx::end_frame();
 
-        return selaura::hook<&IDXGISwapChain::Present>::call(thisptr, SyncInterval, Flags);
+        return selaura::hook<&IDXGISwapChain3::Present>::call(thisptr, SyncInterval, Flags);
     }
 };
 
 template<>
-struct selaura::detour<&IDXGISwapChain::ResizeBuffers> {
-    static HRESULT hk(IDXGISwapChain* thisptr, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags) {
+struct selaura::detour<&IDXGISwapChain3::ResizeBuffers1> {
+    static HRESULT hk(IDXGISwapChain3* thisptr, UINT BufferCount, UINT Width, UINT Height, DXGI_FORMAT NewFormat, UINT SwapChainFlags, const UINT *pCreationNodeMask, IUnknown* const* ppPresentQueue) {
         sgfx::invalidate();
         init = false;
-        return selaura::hook<&IDXGISwapChain::ResizeBuffers>::call(thisptr, BufferCount, Width, Height, NewFormat, SwapChainFlags);
+
+        return selaura::hook<&IDXGISwapChain3::ResizeBuffers1>::call(thisptr, BufferCount, Width, Height, NewFormat, SwapChainFlags, pCreationNodeMask, ppPresentQueue);
     }
 };
 
@@ -76,8 +77,8 @@ struct selaura::detour<&bgfx::d3d11::RendererContextD3D11::submit> {
         selaura::hook<&bgfx::d3d11::RendererContextD3D11::submit>::call(thisptr, a1, a2, a3);
 
         if (!hooks_init) {
-            selaura::hook<&IDXGISwapChain::Present>::enable(thisptr->$getSwapChain());
-            selaura::hook<&IDXGISwapChain::ResizeBuffers>::enable(thisptr->$getSwapChain());
+            selaura::hook<&IDXGISwapChain3::Present>::enable(thisptr->$getSwapChain());
+            selaura::hook<&IDXGISwapChain3::ResizeBuffers1>::enable(thisptr->$getSwapChain());
 
             hooks_init = true;
         }
@@ -104,8 +105,8 @@ struct selaura::detour<&bgfx::d3d12::RendererContextD3D12::submit> {
             temp_device->CreateCommandQueue(&desc, IID_PPV_ARGS(dummy_queue.put()));
 
             selaura::hook<&ID3D12CommandQueue::ExecuteCommandLists>::enable(dummy_queue.get());
-            selaura::hook<&IDXGISwapChain::Present>::enable(swapChain);
-            selaura::hook<&IDXGISwapChain::ResizeBuffers>::enable(swapChain);
+            selaura::hook<&IDXGISwapChain3::Present>::enable(swapChain);
+            selaura::hook<&IDXGISwapChain3::ResizeBuffers1>::enable(swapChain);
 
             hooks_init = true;
         }

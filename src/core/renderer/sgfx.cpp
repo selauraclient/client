@@ -14,6 +14,10 @@
 namespace sgfx {
     static ID3D12CommandQueue* global_d3d12_queue = nullptr;
 
+    inline DirectX::XMFLOAT4 to_xm4(const glm::vec4& v) { return { v.x, v.y, v.z, v.w }; }
+    inline DirectX::XMFLOAT3 to_xm3(const glm::vec3& v) { return { v.x, v.y, v.z }; }
+    inline DirectX::XMFLOAT2 to_xm2(float x, float y) { return { x, y }; }
+
     void set_d3d12_queue(void* queue) {
         global_d3d12_queue = static_cast<ID3D12CommandQueue*>(queue);
     }
@@ -26,14 +30,11 @@ namespace sgfx {
     bool init(void* native_swapchain) {
         auto& ctx = get_context();
         auto* sc3 = static_cast<IDXGISwapChain3*>(native_swapchain);
-
         winrt::com_ptr<ID3D12Device> test_device;
         if (SUCCEEDED(sc3->GetDevice(IID_PPV_ARGS(test_device.put())))) {
             if (!global_d3d12_queue) return false;
-
             auto d12_backend = std::make_unique<renderer_d3d12>();
             d12_backend->d3d12_queue.copy_from(global_d3d12_queue);
-
             if (d12_backend->init(native_swapchain)) {
                 ctx.backend = std::move(d12_backend);
                 return true;
@@ -55,9 +56,7 @@ namespace sgfx {
 
     void invalidate() {
         auto& ctx = get_context();
-        if (ctx.backend) {
-            ctx.backend->shutdown();
-        }
+        if (ctx.backend) ctx.backend->shutdown();
     }
 
     void begin_frame(float width, float height) {
@@ -67,23 +66,16 @@ namespace sgfx {
         ctx.current_texture = nullptr;
         ctx.clip_enabled = false;
         ctx.current_clip = { 0, 0, 0, 0 };
-        sgfx::draw_rect(0, 0, 0, 0, {0, 0, 0, 0});
     }
 
-    void begin_frame(glm::vec2 size) {
-        begin_frame(size.x, size.y);
-    }
+    void begin_frame(glm::vec2 size) { begin_frame(size.x, size.y); }
 
     void end_frame() {
         auto& ctx = get_context();
-        if (ctx.backend && !ctx.data.vertices.empty()) {
-            ctx.backend->render(ctx.data);
-        }
+        if (ctx.backend && !ctx.data.vertices.empty()) ctx.backend->render(ctx.data);
     }
 
-    void set_texture(texture_id tex) {
-        get_context().current_texture = tex;
-    }
+    void set_texture(texture_id tex) { get_context().current_texture = tex; }
 
     void set_clip(float x, float y, float w, float h) {
         auto& ctx = get_context();
@@ -91,9 +83,7 @@ namespace sgfx {
         ctx.clip_enabled = true;
     }
 
-    void reset_clip() {
-        get_context().clip_enabled = false;
-    }
+    void reset_clip() { get_context().clip_enabled = false; }
 
     void context::add_command_if_needed() {
         bool needs_new = data.commands.empty() ||
@@ -101,15 +91,11 @@ namespace sgfx {
                          data.commands.back().texture != current_texture ||
                          data.commands.back().clip_enabled != clip_enabled ||
                          (clip_enabled && data.commands.back().clip_rect != current_clip);
-        if (needs_new) {
-            data.commands.push_back({0, current_texture, current_clip, clip_enabled, false, 0.0f, 0});
-        }
+        if (needs_new) data.commands.push_back({0, current_texture, current_clip, clip_enabled, false, 0.0f, 0});
     }
 
     glm::vec4 normalize_col(glm::vec4 col) {
-        if (col.r > 1.0f || col.g > 1.0f || col.b > 1.0f) {
-            return { col.r / 255.0f, col.g / 255.0f, col.b / 255.0f, col.a };
-        }
+        if (col.r > 1.0f || col.g > 1.0f || col.b > 1.0f) return { col.r / 255.0f, col.g / 255.0f, col.b / 255.0f, col.a };
         return col;
     }
 
@@ -117,12 +103,13 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = nullptr;
         ctx.add_command_if_needed();
-        glm::vec4 final_col = normalize_col(col);
-        glm::vec4 p = { w, h, 0.0f, 0.0f };
-        ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
-        ctx.data.vertices.push_back({{x, y+h, 0}, final_col, {0, 1}, p, radii});
+        DirectX::XMFLOAT4 fc = to_xm4(normalize_col(col));
+        DirectX::XMFLOAT4 p = { w, h, 0.0f, 0.0f };
+        DirectX::XMFLOAT4 r = to_xm4(radii);
+        ctx.data.vertices.push_back({{x, y, 0}, fc, {0, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y, 0}, fc, {1, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, fc, {1, 1}, p, r});
+        ctx.data.vertices.push_back({{x, y+h, 0}, fc, {0, 1}, p, r});
         ctx.data.commands.back().count += 6;
     }
 
@@ -130,12 +117,13 @@ namespace sgfx {
         auto& ctx = get_context();
         ctx.current_texture = tex;
         ctx.add_command_if_needed();
-        glm::vec4 final_col = normalize_col(col);
-        glm::vec4 p = { w, h, 0.0f, 2.0f };
-        ctx.data.vertices.push_back({{x, y, 0}, final_col, {0, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y, 0}, final_col, {1, 0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y+h, 0}, final_col, {1, 1}, p, radii});
-        ctx.data.vertices.push_back({{x, y+h, 0}, final_col, {0, 1}, p, radii});
+        DirectX::XMFLOAT4 fc = to_xm4(normalize_col(col));
+        DirectX::XMFLOAT4 p = { w, h, 0.0f, 2.0f };
+        DirectX::XMFLOAT4 r = to_xm4(radii);
+        ctx.data.vertices.push_back({{x, y, 0}, fc, {0, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y, 0}, fc, {1, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, fc, {1, 1}, p, r});
+        ctx.data.vertices.push_back({{x, y+h, 0}, fc, {0, 1}, p, r});
         ctx.data.commands.back().count += 6;
     }
 
@@ -147,17 +135,12 @@ namespace sgfx {
         cmd.blur_iterations = iterations;
         cmd.count = 6;
         ctx.data.commands.push_back(cmd);
-        float sw = ctx.data.display_size.x;
-        float sh = ctx.data.display_size.y;
-        float u0 = x / sw;
-        float v0 = y / sh;
-        float u1 = (x + w) / sw;
-        float v1 = (y + h) / sh;
-        glm::vec4 p = { w, h, 0.0f, 4.0f };
-        ctx.data.vertices.push_back({{x, y, 0},     {1,1,1,1}, {u0, v0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y, 0},   {1,1,1,1}, {u1, v0}, p, radii});
-        ctx.data.vertices.push_back({{x+w, y+h, 0}, {1,1,1,1}, {u1, v1}, p, radii});
-        ctx.data.vertices.push_back({{x, y+h, 0},   {1,1,1,1}, {u0, v1}, p, radii});
+        float sw = ctx.data.display_size.x, sh = ctx.data.display_size.y;
+        DirectX::XMFLOAT4 p = { w, h, 0.0f, 4.0f }, r = to_xm4(radii), c = {1,1,1,1};
+        ctx.data.vertices.push_back({{x, y, 0}, c, {x/sw, y/sh}, p, r});
+        ctx.data.vertices.push_back({{x+w, y, 0}, c, {(x+w)/sw, y/sh}, p, r});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, c, {(x+w)/sw, (y+h)/sh}, p, r});
+        ctx.data.vertices.push_back({{x, y+h, 0}, c, {x/sw, (y+h)/sh}, p, r});
         ctx.current_texture = reinterpret_cast<texture_id>(-1);
     }
 
@@ -182,37 +165,20 @@ namespace sgfx {
 
     void set_font(Resource tex_res, Resource json_res, bool aliased) {
         const char* key = (const char*)tex_res.begin();
-        if (font_cache.count(key)) {
-            current_font = &font_cache[key];
-            return;
-        }
+        if (font_cache.count(key)) { current_font = &font_cache[key]; return; }
         msdf_json data_json{};
-        auto error = glz::read<glz::opts{.error_on_unknown_keys = false}>(data_json, std::string_view((char*)json_res.data(), json_res.size()));
-        if (error) return;
+        if (glz::read<glz::opts{.error_on_unknown_keys = false}>(data_json, std::string_view((char*)json_res.data(), json_res.size()))) return;
         texture_id font_tex = nullptr;
         int tw, th, ch;
         unsigned char* pixels = stbi_load_from_memory((const stbi_uc*)tex_res.data(), (int)tex_res.size(), &tw, &th, &ch, 4);
-        if (pixels) {
-            get_context().backend->create_texture(pixels, tw, th, &font_tex);
-            stbi_image_free(pixels);
-        }
+        if (pixels) { get_context().backend->create_texture(pixels, tw, th, &font_tex); stbi_image_free(pixels); }
         font_data font;
-        font.tex_id = font_tex;
-        font.px_range = data_json.atlas.distanceRange;
-        font.prefers_aliased = aliased;
-        float f_tw = (float)data_json.atlas.width;
-        float f_th = (float)data_json.atlas.height;
+        font.tex_id = font_tex; font.px_range = data_json.atlas.distanceRange; font.prefers_aliased = aliased;
+        float f_tw = (float)data_json.atlas.width, f_th = (float)data_json.atlas.height;
         for (const auto& g : data_json.glyphs) {
-            glyph& gl = font.glyphs[g.unicode];
-            gl.advance = g.advance;
-            if (g.planeBounds) {
-                gl.x0 = g.planeBounds->left; gl.y0 = g.planeBounds->bottom;
-                gl.x1 = g.planeBounds->right; gl.y1 = g.planeBounds->top;
-            }
-            if (g.atlasBounds) {
-                gl.u0 = g.atlasBounds->left / f_tw; gl.u1 = g.atlasBounds->right / f_tw;
-                gl.v0 = 1.0f - (g.atlasBounds->top / f_th); gl.v1 = 1.0f - (g.atlasBounds->bottom / f_th);
-            }
+            glyph& gl = font.glyphs[g.unicode]; gl.advance = g.advance;
+            if (g.planeBounds) { gl.x0 = g.planeBounds->left; gl.y0 = g.planeBounds->bottom; gl.x1 = g.planeBounds->right; gl.y1 = g.planeBounds->top; }
+            if (g.atlasBounds) { gl.u0 = g.atlasBounds->left / f_tw; gl.u1 = g.atlasBounds->right / f_tw; gl.v0 = 1.0f - (g.atlasBounds->top / f_th); gl.v1 = 1.0f - (g.atlasBounds->bottom / f_th); }
         }
         font_cache[key] = std::move(font);
         current_font = &font_cache[key];
@@ -226,42 +192,25 @@ namespace sgfx {
         bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
         float effective_size = use_aliased ? std::round(size) : size;
         float max_ascent = 0.0f;
-        for (const auto& [unicode, g] : current_font->glyphs) {
-            max_ascent = std::max(max_ascent, g.y1);
-        }
-        float cur_x = x;
-        float cur_y = y + (max_ascent * effective_size);
-        if (use_aliased) {
-            cur_x = std::floor(cur_x + 0.5f);
-            cur_y = std::floor(cur_y + 0.5f);
-        }
-        float aa_flag = use_aliased ? 1.0f : 0.0f;
+        for (const auto& [unicode, g] : current_font->glyphs) max_ascent = std::max(max_ascent, g.y1);
+        float cur_x = x, cur_y = y + (max_ascent * effective_size);
+        if (use_aliased) { cur_x = std::floor(cur_x + 0.5f); cur_y = std::floor(cur_y + 0.5f); }
+        DirectX::XMFLOAT4 c = to_xm4(color), r_null = {0,0,0,0};
         bool first_glyph = true;
         for (size_t i = 0; i < text.length(); ) {
-            uint32_t c = decode_utf8(text, i);
-            if (!current_font->glyphs.count(c)) continue;
-            const auto& g = current_font->glyphs.at(c);
-            if (first_glyph) {
-                cur_x -= g.x0 * effective_size;
-                first_glyph = false;
-            }
-            float gx = cur_x + g.x0 * effective_size;
-            float gy = cur_y - g.y1 * effective_size;
-            float gw = (g.x1 - g.x0) * effective_size;
-            float gh = (g.y1 - g.y0) * effective_size;
-            if (use_aliased) {
-                float sx = std::floor(gx + 0.5f);
-                float sy = std::floor(gy + 0.5f);
-                gw = std::floor(gx + gw + 0.5f) - sx;
-                gh = std::floor(gy + gh + 0.5f) - sy;
-                gx = sx; gy = sy;
-            }
-            glm::vec4 shader_params = { gw, gh, (float)current_font->px_range, 3.0f };
-            shader_params.y = aa_flag;
-            ctx.data.vertices.push_back({ {gx, gy, 0}, color, {g.u0, g.v0}, shader_params, {0,0,0,0} });
-            ctx.data.vertices.push_back({ {gx+gw, gy, 0}, color, {g.u1, g.v0}, shader_params, {0,0,0,0} });
-            ctx.data.vertices.push_back({ {gx+gw, gy+gh, 0}, color, {g.u1, g.v1}, shader_params, {0,0,0,0} });
-            ctx.data.vertices.push_back({ {gx, gy+gh, 0}, color, {g.u0, g.v1}, shader_params, {0,0,0,0} });
+            uint32_t code = decode_utf8(text, i);
+            if (!current_font->glyphs.count(code)) continue;
+            const auto& g = current_font->glyphs.at(code);
+            if (first_glyph) { cur_x -= g.x0 * effective_size; first_glyph = false; }
+            float gx = cur_x + g.x0 * effective_size, gy = cur_y - g.y1 * effective_size;
+            float gw = (g.x1 - g.x0) * effective_size, gh = (g.y1 - g.y0) * effective_size;
+            if (use_aliased) { float sx = std::floor(gx + 0.5f), sy = std::floor(gy + 0.5f); gw = std::floor(gx + gw + 0.5f) - sx; gh = std::floor(gy + gh + 0.5f) - sy; gx = sx; gy = sy; }
+            DirectX::XMFLOAT4 p = { gw, gh, (float)current_font->px_range, 3.0f };
+            p.y = use_aliased ? 1.0f : 0.0f;
+            ctx.data.vertices.push_back({{gx, gy, 0}, c, {g.u0, g.v0}, p, r_null});
+            ctx.data.vertices.push_back({{gx+gw, gy, 0}, c, {g.u1, g.v0}, p, r_null});
+            ctx.data.vertices.push_back({{gx+gw, gy+gh, 0}, c, {g.u1, g.v1}, p, r_null});
+            ctx.data.vertices.push_back({{gx, gy+gh, 0}, c, {g.u0, g.v1}, p, r_null});
             ctx.data.commands.back().count += 6;
             float advance = g.advance * effective_size;
             cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
@@ -271,27 +220,16 @@ namespace sgfx {
     glm::vec2 get_text_size(std::string_view text, float size, int aliased) {
         if (!current_font || text.empty()) return {0.0f, 0.0f};
         bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
-        float cur_x = 0.0f;
-        float min_x = 1e10f, max_x = -1e10f, min_y = 1e10f, max_y = -1e10f;
+        float cur_x = 0.0f, min_x = 1e10f, max_x = -1e10f, min_y = 1e10f, max_y = -1e10f;
         bool first_glyph = true;
         for (size_t i = 0; i < text.length(); ) {
             uint32_t c = decode_utf8(text, i);
             if (!current_font->glyphs.count(c)) continue;
             const auto& g = current_font->glyphs.at(c);
-            if (first_glyph) {
-                cur_x -= g.x0 * size;
-                first_glyph = false;
-            }
-            float gx = cur_x + g.x0 * size;
-            float gy = -g.y1 * size;
-            float gw = (g.x1 - g.x0) * size;
-            float gh = (g.y1 - g.y0) * size;
-            min_x = std::min(min_x, gx);
-            max_x = std::max(max_x, gx + gw);
-            min_y = std::min(min_y, gy);
-            max_y = std::max(max_y, gy + gh);
-            float advance = g.advance * size;
-            cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
+            if (first_glyph) { cur_x -= g.x0 * size; first_glyph = false; }
+            float gx = cur_x + g.x0 * size, gy = -g.y1 * size, gw = (g.x1 - g.x0) * size, gh = (g.y1 - g.y0) * size;
+            min_x = std::min(min_x, gx); max_x = std::max(max_x, gx + gw); min_y = std::min(min_y, gy); max_y = std::max(max_y, gy + gh);
+            float advance = g.advance * size; cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
         }
         return { max_x - min_x, max_y - min_y };
     }

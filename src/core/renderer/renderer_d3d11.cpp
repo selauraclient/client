@@ -28,7 +28,7 @@ namespace sgfx {
         device->CreateRasterizerState(&r_desc, raster_scissor_on.put());
 
         D3D11_SAMPLER_DESC s_desc{};
-        s_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        s_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
         s_desc.AddressU = s_desc.AddressV = s_desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
         device->CreateSamplerState(&s_desc, sampler.put());
 
@@ -210,17 +210,43 @@ namespace sgfx {
 
     void renderer_d3d11::shutdown() {
         if (ctx) {
-            ID3D11RenderTargetView* null_rtv = nullptr;
-            ctx->OMSetRenderTargets(0, &null_rtv, nullptr);
+            ID3D11RenderTargetView* null_rtvs[8] = { nullptr };
+            ID3D11ShaderResourceView* null_srvs[128] = { nullptr };
+            ID3D11Buffer* null_cbs[14] = { nullptr };
+
+            ctx->OMSetRenderTargets(8, null_rtvs, nullptr);
+            ctx->PSSetShaderResources(0, 128, null_srvs);
+            ctx->VSSetShaderResources(0, 128, null_srvs);
+            ctx->PSSetConstantBuffers(0, 14, null_cbs);
+            ctx->VSSetConstantBuffers(0, 14, null_cbs);
+
             ctx->ClearState();
             ctx->Flush();
         }
-        rtv = nullptr; swapchain = nullptr; device = nullptr; ctx = nullptr;
-        v_buffer = nullptr; i_buffer = nullptr; constant_buffer = nullptr; blur_cb = nullptr;
-        vs = nullptr; ps = nullptr; layout = nullptr; sampler = nullptr;
-        blend_state = nullptr; raster_scissor_off = nullptr; raster_scissor_on = nullptr;
+
+        rtv = nullptr;
+        swapchain = nullptr;
+        v_buffer = nullptr;
+        i_buffer = nullptr;
+        constant_buffer = nullptr;
+        blur_cb = nullptr;
+        vs = nullptr;
+        ps = nullptr;
+        layout = nullptr;
+        sampler = nullptr;
+        blend_state = nullptr;
+        raster_scissor_off = nullptr;
+        raster_scissor_on = nullptr;
         depth_disabled_state = nullptr;
-        for(int i=0; i<2; ++i) { blur_textures[i] = nullptr; blur_srvs[i] = nullptr; blur_rtvs[i] = nullptr; }
+
+        for (int i = 0; i < 2; ++i) {
+            blur_textures[i] = nullptr;
+            blur_srvs[i] = nullptr;
+            blur_rtvs[i] = nullptr;
+        }
+
+        ctx = nullptr;
+        device = nullptr;
     }
 
     void renderer_d3d11::create_texture(void* data, int width, int height, void** out_srv) {
