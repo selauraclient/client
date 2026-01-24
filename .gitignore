@@ -375,7 +375,6 @@ cmake-build-release/
 .ninja_log
 *.ninja
 CMakeCache.txt
-*.cmake
 _deps/
 
 build/
