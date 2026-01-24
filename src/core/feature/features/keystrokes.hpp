@@ -12,6 +12,9 @@ namespace selaura {
 
         void on_render(render_event& ev);
         void on_mcupdate(mcgame_update& ev);
+
+        std::string_view get_name() const override { return name; }
+        static constexpr hat::fixed_string name = "Keystrokes";
     private:
         bool up{}, left{}, right{}, down{}, jump{};
 

@@ -43,6 +43,7 @@
 #include <entt/entt.hpp>
 #include <glaze/glaze.hpp>
 #include <glm/glm.hpp>
+#include <gsl/gsl>
 #include <fmt/base.h>
 #include <fmt/format.h>
 #include <libhat/access.hpp>

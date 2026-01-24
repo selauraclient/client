@@ -22,18 +22,12 @@ namespace selaura {
         sgfx::draw_text(str, 10, 10, 24.f);
     }
 
-
     void coords::on_mcupdate(mcgame_update& ev) {
         if (LocalPlayer* lp = ev.mc->getPrimaryLocalPlayer(); lp) {
             auto& ent = lp->getEntityContext();
 
-            if (auto* svc = ent.tryGetComponent<StateVectorComponent>(); svc) {
-                this->pos = svc->mPos;
-            }
-
-            if (auto* ofc = ent.tryGetComponent<OffsetsComponent>(); ofc) {
-                this->pos.y -= ofc->mHeightOffset;
-            }
+            this->pos = ent.getComponent<StateVectorComponent>().mPos;
+            this->pos.y -= ent.getComponent<OffsetsComponent>().mHeightOffset;
         }
     }
 };

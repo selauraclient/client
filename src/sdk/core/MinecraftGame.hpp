@@ -31,6 +31,12 @@ public:
         return ci->getLocalPlayer();
     }
 
+    GuiData* getPrimaryGuiData() {
+        if (!this->isPrimaryClientInstanceReady()) return nullptr;
+        auto ci = this->getPrimaryClientInstance();
+        return ci->getGuiData();
+    }
+
     MCAPI void _update();
     MCAPI void onDeviceLost();
 };

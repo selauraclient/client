@@ -15,6 +15,9 @@ namespace selaura {
 
         void set_key(uint32_t new_key);
         uint32_t get_key();
+
+        [[nodiscard]] virtual std::string_view get_name() const { return name; }
+        static constexpr hat::fixed_string name = "Unknown Mod";
     private:
         bool enabled = false;
         uint32_t key = 0;

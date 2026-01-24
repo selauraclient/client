@@ -52,6 +52,7 @@ CPMAddPackage("gh:g-truc/glm#e7970a8b26732f1b0df9690f7180546f8c30e48e")
 CPMAddPackage("gh:stephenberry/glaze@7.0.1")
 CPMAddPackage("gh:nothings/stb#f1c79c02822848a9bed4315b12c8c8f3761e1296")
 CPMAddPackage("gh:DisabledMallis/magic_vtable#dbc41e2d13766a644ea88cbd4b839202e01ba582")
+CPMAddPackage("gh:microsoft/GSL#756c91ab895aa52f650599bb1a3fc131f1f4b5ef")
 CPMAddPackage(URI "gh:gabime/spdlog@1.17.0" OPTIONS "SPDLOG_FMT_EXTERNAL ON")
 
 file(GLOB_RECURSE SELAURA_SOURCES CONFIGURE_DEPENDS "core/*.cpp" "memory/*.cpp" "sdk/*.cpp")
@@ -81,6 +82,7 @@ target_link_libraries(Selaura PUBLIC
         spdlog
         glm
         glaze::glaze
+        Microsoft.GSL::GSL
         ${SDK_LIB}
         Version.lib
         dwmapi.lib
