@@ -4,6 +4,8 @@
 
 namespace sgfx {
     bool renderer_d3d11::init(void* sc) {
+        if (!sc) return false;
+
         swapchain.copy_from(static_cast<IDXGISwapChain3*>(sc));
 
         if (!device) {

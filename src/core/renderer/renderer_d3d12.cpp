@@ -166,6 +166,5 @@ namespace sgfx {
         wrapped_back_buffers.clear();
         d11on12_device = nullptr;
         d12_device = nullptr;
-        renderer_d3d11::shutdown();
     }
 }
