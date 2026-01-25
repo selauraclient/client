@@ -85,6 +85,7 @@ namespace sgfx {
 
     glm::vec4 normalize_col(glm::vec4 col);
     void draw_rect(float x, float y, float w, float h, glm::vec4 col, glm::vec4 radii = {0,0,0,0});
+    void draw_rect_stroke(float x, float y, float w, float h, float thickness, glm::vec4 col, glm::vec4 radii = {0, 0, 0, 0});
     void draw_rect_textured(float x, float y, float w, float h, texture_id tex, glm::vec4 col = {1,1,1,1}, glm::vec4 radii = {0,0,0,0});
     void draw_blur(float x, float y, float w, float h, float intensity, int iterations, glm::vec4 radii = {0,0,0,0});
 

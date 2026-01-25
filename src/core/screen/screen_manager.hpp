@@ -2,6 +2,7 @@
 #include <pch.hpp>
 
 #include "screens/clickgui.hpp"
+#include "screens/hud_editor.hpp"
 
 namespace selaura {
     struct screen_manager {
@@ -44,6 +45,6 @@ namespace selaura {
         bool is_in_hud_screen = false;
     private:
         std::optional<std::reference_wrapper<screen>> active_screen;
-        std::tuple<clickgui> screens{};
+        std::tuple<clickgui, hud_editor> screens{};
     };
 };

@@ -4,8 +4,10 @@
 #include "../screen.hpp"
 
 namespace selaura {
-    struct clickgui : screen {
-        clickgui() {};
+    struct hud_editor : screen {
+        hud_editor() {
+            set_key(0xA1);
+        }
 
         void on_enable() override;
         void on_disable() override;

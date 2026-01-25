@@ -5,7 +5,8 @@
 
 namespace selaura {
     enum class screen_type {
-        clickgui
+        clickgui,
+        hud_editor
     };
 
     struct screen {

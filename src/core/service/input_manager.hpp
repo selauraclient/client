@@ -4,16 +4,6 @@
 
 using namespace GameInput::v2;
 namespace selaura {
-    enum mouse_button : uint32_t {
-        left = 1,
-        right = 2,
-        middle = 4,
-        button4 = 8,
-        button5 = 16,
-        wheel_tilt_left = 32,
-        wheel_tilt_right = 64
-    };
-
     struct input_manager {
         void update(UINT uMsg, WPARAM wParam, LPARAM lParam);
         void update(GameInputMouseState state);

@@ -17,10 +17,6 @@ namespace selaura {
         selaura::get<selaura::event_manager>().unsubscribe(this, &clickgui::on_render);
     }
 
-    bool is_hovered(float mx, float my, float x, float y, float w, float h) {
-        return mx >= x && mx <= x + w && my >= y && my <= y + h;
-    }
-
     void clickgui::on_render(render_event& ev) {
         sgfx::draw_blur(0, 0, ev.screen_width, ev.screen_height, 2.f, 4);
 

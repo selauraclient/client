@@ -99,13 +99,19 @@ struct selaura::detour<&GameInput::v2::IGameInputReading::GetMouseState> {
 
         if (state->absolutePositionX == 0 && state->absolutePositionY == 0) return result;
 
+        POINT pt = { (LONG)state->absolutePositionX, (LONG)state->absolutePositionY };
+        HWND active_window = GetActiveWindow();
+        ScreenToClient(active_window, &pt);
+
         input_event ev{};
         ev.is_game_input = true;
+        ev.rendered_mouse_pos = {pt.x, pt.y};
         ev.mouse_pos = {(float)state->absolutePositionX, (float)state->absolutePositionY};
         ev.mouse_delta = {(float)state->positionX, (float)state->positionY};
         ev.scroll_wheel_delta = state->wheelY;
         ev.keys_curr = selaura::global_keys_curr;
         ev.keys_prev = selaura::global_keys_prev;
+        ev.buttons = static_cast<mouse_button>(state->buttons);
 
         selaura::get<selaura::event_manager>().dispatch(ev);
 

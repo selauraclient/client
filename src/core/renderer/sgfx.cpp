@@ -113,6 +113,23 @@ namespace sgfx {
         ctx.data.commands.back().count += 6;
     }
 
+    void draw_rect_stroke(float x, float y, float w, float h, float thickness, glm::vec4 col, glm::vec4 radii) {
+        auto& ctx = get_context();
+        ctx.current_texture = nullptr;
+        ctx.add_command_if_needed();
+
+        DirectX::XMFLOAT4 fc = to_xm4(normalize_col(col));
+        DirectX::XMFLOAT4 p = { w, h, thickness, 5.0f };
+        DirectX::XMFLOAT4 r = to_xm4(radii);
+
+        ctx.data.vertices.push_back({{x, y, 0}, fc, {0, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y, 0}, fc, {1, 0}, p, r});
+        ctx.data.vertices.push_back({{x+w, y+h, 0}, fc, {1, 1}, p, r});
+        ctx.data.vertices.push_back({{x, y+h, 0}, fc, {0, 1}, p, r});
+
+        ctx.data.commands.back().count += 6;
+    }
+
     void draw_rect_textured(float x, float y, float w, float h, texture_id tex, glm::vec4 col, glm::vec4 radii) {
         auto& ctx = get_context();
         ctx.current_texture = tex;
@@ -219,18 +236,37 @@ namespace sgfx {
 
     glm::vec2 get_text_size(std::string_view text, float size, int aliased) {
         if (!current_font || text.empty()) return {0.0f, 0.0f};
+
         bool use_aliased = (aliased == -1) ? current_font->prefers_aliased : (bool)aliased;
-        float cur_x = 0.0f, min_x = 1e10f, max_x = -1e10f, min_y = 1e10f, max_y = -1e10f;
+        float effective_size = use_aliased ? std::round(size) : size;
+
+        float total_advance = 0.0f;
+        float max_ascent = 0.0f;
+        float max_descent = 0.0f;
+
+        for (const auto& [unicode, g] : current_font->glyphs) {
+            max_ascent = std::max(max_ascent, g.y1);
+            max_descent = std::min(max_descent, g.y0);
+        }
+
         bool first_glyph = true;
         for (size_t i = 0; i < text.length(); ) {
             uint32_t c = decode_utf8(text, i);
             if (!current_font->glyphs.count(c)) continue;
+
             const auto& g = current_font->glyphs.at(c);
-            if (first_glyph) { cur_x -= g.x0 * size; first_glyph = false; }
-            float gx = cur_x + g.x0 * size, gy = -g.y1 * size, gw = (g.x1 - g.x0) * size, gh = (g.y1 - g.y0) * size;
-            min_x = std::min(min_x, gx); max_x = std::max(max_x, gx + gw); min_y = std::min(min_y, gy); max_y = std::max(max_y, gy + gh);
-            float advance = g.advance * size; cur_x += use_aliased ? std::floor(advance + 0.5f) : advance;
+
+            if (first_glyph) {
+                total_advance -= g.x0 * effective_size;
+                first_glyph = false;
+            }
+
+            float advance = g.advance * effective_size;
+            total_advance += use_aliased ? std::floor(advance + 0.5f) : advance;
         }
-        return { max_x - min_x, max_y - min_y };
+
+        float height = (max_ascent - max_descent) * effective_size;
+
+        return { total_advance, height };
     }
 }
