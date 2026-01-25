@@ -27,7 +27,10 @@ namespace selaura {
         float sidebar_width = menu_width * 0.27f;
 
         sgfx::draw_rect(menu_x, menu_y, menu_width, menu_height, {34, 34, 34, 1.f}, {15, 15, 15, 15});
+        sgfx::draw_rect_stroke(menu_x, menu_y, menu_width, menu_height, 1.5f, {0.3f, 0.3f, 0.3f, 1.0f}, {15, 15, 15, 15});
+
         sgfx::draw_rect(menu_x, menu_y, sidebar_width, menu_height, {24, 24, 24, 1.f}, {15, 0, 0, 15});
+        sgfx::draw_rect_stroke(menu_x, menu_y, sidebar_width, menu_height, 1.5f, {0.3f, 0.3f, 0.3f, 1.0f}, {15, 0, 0, 15});
 
         const float padding = 15.f;
         const int cols = 4;
