@@ -17,6 +17,7 @@
 #include <resolver.hpp>
 
 #include "win_utils.hpp"
+#include "renderer/ui.hpp"
 #include "sdk/actor/components/MoveInputComponent.hpp"
 
 LOAD_RESOURCE(selaura_icon_png)
@@ -87,7 +88,8 @@ DWORD WINAPI SelauraProc(LPVOID lpParam) {
     });
 
     selaura::get<selaura::event_manager>().subscribe<selaura::input_event>([&](auto& ev) {
-         scrn.for_each([&](auto& screen) {
+        sgfx::ui::input_handler(ev);
+        scrn.for_each([&](auto& screen) {
             using screen_t = std::remove_cvref_t<decltype(screen)>;
             if (ev.keys_curr.test(screen.get_key()) && !scrn.any_screens_enabled() && scrn.is_in_hud_screen) {
                 scrn.enable_screen<screen_t>();

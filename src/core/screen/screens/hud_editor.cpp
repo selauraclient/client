@@ -3,6 +3,7 @@
 #include "core/service_manager.hpp"
 #include "core/event/event_manager.hpp"
 #include "core/renderer/sgfx.hpp"
+#include "core/renderer/ui.hpp"
 
 namespace selaura {
     screen_type hud_editor::get_type() {
@@ -37,29 +38,14 @@ namespace selaura {
         float x = (ev.screen_width - btn_w) / 2.f;
         float y = (ev.screen_height - btn_h) / 2.f;
 
-        sgfx::draw_rect(x, y, btn_w, btn_h, { 0.12f, 0.12f, 0.12f, 0.95f }, {10.f, 10.f, 10.f, 10.f});
-        sgfx::draw_rect_stroke(x, y, btn_w, btn_h, 1.5f, {0.3f, 0.3f, 0.3f, 1.0f}, {10.f, 10.f, 10.f, 10.f});
-        sgfx::draw_text(label, x + padding.x, y + padding.y, font_size, { 1.f, 1.f, 1.f, 1.f });
+        sgfx::ui::button({x, y}, {btn_w, btn_h}, "Open Settings", 20.f, []() {
+            auto& scrn = selaura::get<selaura::screen_manager>();
+            scrn.disable_screen<selaura::hud_editor>();
+            scrn.enable_screen<selaura::clickgui>();
+        });
     }
 
     void hud_editor::on_input(input_event& ev) {
-        if (ev.is_button_down(mouse_button::left)) {
-            std::string label = "Open Settings";
-            float font_size = 20.f;
-            glm::vec2 padding = { 20.f, 10.f };
 
-            glm::vec2 ts = sgfx::get_text_size(label, font_size);
-            float btn_w = ts.x + (padding.x * 2);
-            float btn_h = ts.y + (padding.y * 2);
-
-            auto& ctx = sgfx::get_context();
-            float x = (ctx.data.display_size.x - btn_w) / 2.f;
-            float y = (ctx.data.display_size.y - btn_h) / 2.f;
-
-            if (is_hovered(ev.rendered_mouse_pos.x, ev.rendered_mouse_pos.y, x, y, btn_w, btn_h)) {
-                selaura::get<selaura::screen_manager>().disable_screen<selaura::hud_editor>();
-                selaura::get<selaura::screen_manager>().enable_screen<selaura::clickgui>();
-            }
-        }
     }
 };
