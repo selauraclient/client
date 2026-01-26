@@ -3,6 +3,7 @@
 
 #include "features/coords.hpp"
 #include "features/keystrokes.hpp"
+#include "features/third_person_nametag.hpp"
 
 namespace selaura {
     struct feature_manager {
@@ -28,6 +29,6 @@ namespace selaura {
             );
         }
     private:
-        std::tuple<coords, keystrokes> features{};
+        std::tuple<coords, keystrokes, third_person_nametag> features{};
     };
 };

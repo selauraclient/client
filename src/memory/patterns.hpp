@@ -17,26 +17,38 @@ namespace selaura {
         using offset_type = Offset;
 
         static uintptr_t resolve() {
-            uintptr_t addr = reinterpret_cast<uintptr_t>(hat::find_pattern(compiled_pattern, ".text").get());
-            if (!addr) return 0;
+            static uintptr_t cached = [] {
+                uintptr_t addr =
+                    reinterpret_cast<uintptr_t>(
+                        hat::find_pattern(compiled_pattern, ".text").get()
+                    );
 
-            if constexpr (!std::is_void_v<Offset>) {
-                const uintptr_t target_ptr = addr + Offset::offset;
+                if (!addr) return uintptr_t{0};
 
-                if constexpr (std::is_same_v<typename Offset::mode, deref>) {
-                    std::int32_t displacement{};
-                    std::memcpy(&displacement, reinterpret_cast<void*>(target_ptr), sizeof(std::int32_t));
+                if constexpr (!std::is_void_v<Offset>) {
+                    const uintptr_t target_ptr = addr + Offset::offset;
 
-                    uintptr_t next_instruction = target_ptr + sizeof(std::int32_t);
-                    return next_instruction + displacement;
-                } else {
-                    std::int32_t value{};
-                    std::memcpy(&value, reinterpret_cast<void*>(target_ptr), sizeof(std::int32_t));
-                    return static_cast<uintptr_t>(value);
+                    if constexpr (std::is_same_v<typename Offset::mode, deref>) {
+                        std::int32_t disp{};
+                        std::memcpy(&disp, (void*)target_ptr, sizeof(disp));
+                        return target_ptr + sizeof(disp) + disp;
+                    } else {
+                        std::int32_t val{};
+                        std::memcpy(&val, (void*)target_ptr, sizeof(val));
+                        return static_cast<uintptr_t>(val);
+                    }
                 }
-            }
 
-            return addr;
+                return addr;
+            }();
+
+            return cached;
+        }
+
+        template <typename T>
+            requires std::is_pointer_v<T>
+        static T resolve() {
+            return reinterpret_cast<T>(resolve());
         }
     };
 };
