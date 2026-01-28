@@ -10,15 +10,15 @@
 #include <memory/hooks/CoreHooks.cpp>
 #include <memory/hooks/D3DHooks.cpp>
 #include <memory/hooks/InputHooks.cpp>
-#include <sdk/core/GameInput_GDK.h>
-#include <sdk/core/MinecraftGame.hpp>
-#include <sdk/renderer/bgfx.hpp>
+#include <sdk/bedrock/core/GameInput_GDK.h>
+#include <sdk/bedrock/core/MinecraftGame.hpp>
+#include <sdk/bedrock/renderer/bgfx.hpp>
 
 #include <resolver.hpp>
 
 #include "win_utils.hpp"
 #include "renderer/ui.hpp"
-#include "sdk/actor/components/MoveInputComponent.hpp"
+#include "sdk/bedrock/actor/components/MoveInputComponent.hpp"
 
 LOAD_RESOURCE(selaura_icon_png)
 

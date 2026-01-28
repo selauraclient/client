@@ -1,8 +1,8 @@
 #pragma once
 #include <pch.hpp>
 
-#include <sdk/actor/LocalPlayer.hpp>
-#include <sdk/renderer/gui/GuiData.hpp>
+#include <sdk/bedrock/actor/LocalPlayer.hpp>
+#include <sdk/bedrock/renderer/gui/GuiData.hpp>
 
 #include "memory/memory.hpp"
 

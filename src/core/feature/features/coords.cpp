@@ -3,8 +3,10 @@
 #include "core/service_manager.hpp"
 #include "core/event/event_manager.hpp"
 #include "core/renderer/sgfx.hpp"
-#include "sdk/actor/components/StateVectorComponent.hpp"
-#include "sdk/actor/components/OffsetsComponent.hpp"
+#include "sdk/bedrock/actor/components/StateVectorComponent.hpp"
+#include "sdk/bedrock/actor/components/OffsetsComponent.hpp"
+
+#include "sdk/core/actor/actor.hpp"
 
 namespace selaura {
     void coords::on_enable() {
@@ -23,11 +25,10 @@ namespace selaura {
     }
 
     void coords::on_mcupdate(mcgame_update& ev) {
+        using namespace selaura::sdk;
         if (LocalPlayer* lp = ev.mc->getPrimaryLocalPlayer(); lp) {
-            auto& ent = lp->getEntityContext();
-
-            this->pos = ent.getComponent<StateVectorComponent>().mPos;
-            this->pos.y -= ent.getComponent<OffsetsComponent>().mHeightOffset;
+            auto act = std::make_shared<selaura_actor>(lp);
+            this->pos = act->get_position(true);
         }
     }
 };

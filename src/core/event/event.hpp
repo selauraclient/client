@@ -1,8 +1,8 @@
 #pragma once
 #include <pch.hpp>
 
-#include <sdk/core/MinecraftGame.hpp>
-#include <sdk/renderer/ScreenView.hpp>
+#include <sdk/bedrock/core/MinecraftGame.hpp>
+#include <sdk/bedrock/renderer/ScreenView.hpp>
 
 namespace selaura {
     struct event {

@@ -8,7 +8,7 @@
 #include <core/screen/screen_manager.hpp>
 #include <core/feature/feature_manager.hpp>
 
-#include <sdk/core/MinecraftGame.hpp>
+#include <sdk/bedrock/core/MinecraftGame.hpp>
 
 namespace selaura {
     struct service_manager_impl {

@@ -4,7 +4,7 @@
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
 
-#include <sdk/renderer/bgfx.hpp>
+#include <sdk/bedrock/renderer/bgfx.hpp>
 
 #include <core/renderer/sgfx.hpp>
 #include <core/renderer/renderer_d3d11.hpp>

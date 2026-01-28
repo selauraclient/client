@@ -3,7 +3,7 @@
 #include <core/service_manager.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
-#include <sdk/core/GameInput_GDK.h>
+#include <sdk/bedrock/core/GameInput_GDK.h>
 
 namespace selaura {
     static WNDPROC oWndProc;

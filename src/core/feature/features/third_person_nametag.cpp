@@ -1,6 +1,6 @@
 #include "third_person_nametag.hpp"
 #include <memory/patterns.hpp>
-#include <sdk/renderer/game/LevelRendererPlayer.hpp>
+#include <sdk/bedrock/renderer/game/LevelRendererPlayer.hpp>
 
 namespace selaura {
     void third_person_nametag::on_enable() {

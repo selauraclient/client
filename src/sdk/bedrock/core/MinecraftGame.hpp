@@ -1,8 +1,8 @@
 #pragma once
 #include <pch.hpp>
 
-#include <sdk/core/SubClientId.hpp>
-#include <sdk/core/ClientInstance.hpp>
+#include <sdk/bedrock/core/SubClientId.hpp>
+#include <sdk/bedrock/core/ClientInstance.hpp>
 
 class MinecraftGame {
 public:

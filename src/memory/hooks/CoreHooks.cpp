@@ -3,9 +3,9 @@
 #include <core/service_manager.hpp>
 #include <memory/detour.hpp>
 #include <memory/hook.hpp>
-#include <sdk/core/MinecraftGame.hpp>
+#include <sdk/bedrock/core/MinecraftGame.hpp>
 
-#include "sdk/renderer/ScreenView.hpp"
+#include "sdk/bedrock/renderer/ScreenView.hpp"
 
 template <>
 struct selaura::detour<&MinecraftGame::_update> {

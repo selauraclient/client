@@ -3,7 +3,7 @@
 #include "core/service_manager.hpp"
 #include "core/event/event_manager.hpp"
 #include "core/renderer/sgfx.hpp"
-#include "sdk/actor/components/MoveInputComponent.hpp"
+#include "sdk/bedrock/actor/components/MoveInputComponent.hpp"
 
 namespace selaura {
     void keystrokes::on_enable() {
